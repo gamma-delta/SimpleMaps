@@ -1,0 +1,13 @@
+{
+    "item.untitledmapmod.minimap": "Minimap",
+    "item.untitledmapmod.world_map": "World Map",
+    "itemGroup.untitledmapmod": "Untitled Map Mod",
+
+    "advancement.untitledmapmod.minimap": "Unlock Minimap",
+    "advancement.untitledmapmod.minimap.desc": "A small, omnipresent view of the world around you.",
+    "advancement.untitledmapmod.world_map": "Unlock World Map",
+    "advancement.untitledmapmod.world_map.desc": "A large map you can bring up and pan around.",
+
+    "untitledmapmod.gui.keygroup": "Untitled Map Mod",
+    "untitledmapmod.keybind.open_world_map": "Open World Map"
+}
