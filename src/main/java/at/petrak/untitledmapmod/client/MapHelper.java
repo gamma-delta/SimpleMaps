@@ -23,9 +23,11 @@ public class MapHelper {
     /**
      * Draw the region around the player to the texture and upload it.
      */
-    public static void blitMapToTexture(LocalPlayer player, BlockPos targetPos, DynamicTexture texture) {
+    public static void blitMapToTexture(LocalPlayer player, BlockPos targetPos, boolean onlyShowTop,
+        DynamicTexture texture) {
         var world = player.getLevel();
-        var canPlayerSeeSky = world.canSeeSky(player.getOnPos().above()) && !world.dimensionType().hasCeiling();
+        var canPlayerSeeSky = onlyShowTop
+            || (world.canSeeSky(player.getOnPos().above()) && !world.dimensionType().hasCeiling());
 
         var mapWidth = texture.getPixels().getWidth();
         var mapHeight = texture.getPixels().getHeight();

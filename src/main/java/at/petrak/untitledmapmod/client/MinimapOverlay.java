@@ -14,7 +14,7 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-public class ModOverlays {
+public class MinimapOverlay {
     private static final int MAP_WIDTH = 128;
     private static final int MAP_HEIGHT = 128;
     private static DynamicTexture MINIMAP;
@@ -115,7 +115,7 @@ public class ModOverlays {
         }
 
         if (doRedraw) {
-            MapHelper.blitMapToTexture(player, player.getOnPos().above(), MINIMAP);
+            MapHelper.blitMapToTexture(player, player.getOnPos().above(), false, MINIMAP);
         }
     }
 }

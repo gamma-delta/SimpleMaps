@@ -1,7 +1,8 @@
 package at.petrak.untitledmapmod;
 
+import at.petrak.untitledmapmod.client.GuiWorldMap;
+import at.petrak.untitledmapmod.client.MinimapOverlay;
 import at.petrak.untitledmapmod.client.ModKeybinds;
-import at.petrak.untitledmapmod.client.ModOverlays;
 import at.petrak.untitledmapmod.common.items.ModItems;
 import at.petrak.untitledmapmod.datagen.Advancements;
 import at.petrak.untitledmapmod.datagen.ModDataGenerators;
@@ -33,14 +34,16 @@ public class UntitledMapMod {
         ModItems.ITEMS.register(modBus);
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            evBus.register(ModOverlays.class);
+            evBus.register(MinimapOverlay.class);
+            evBus.register(GuiWorldMap.class);
         });
     }
 
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent evt) {
         evt.enqueueWork(() -> {
-            ModOverlays.initTextures();
+            MinimapOverlay.initTextures();
+            GuiWorldMap.initTextures();
             ModKeybinds.init();
         });
     }
