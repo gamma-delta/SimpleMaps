@@ -3,9 +3,13 @@ package at.petrak.untitledmapmod;
 import at.petrak.untitledmapmod.client.GuiWorldMap;
 import at.petrak.untitledmapmod.client.MinimapOverlay;
 import at.petrak.untitledmapmod.client.ModKeybinds;
+import at.petrak.untitledmapmod.common.blocks.ModBlocks;
+import at.petrak.untitledmapmod.common.capability.ModCapabilities;
 import at.petrak.untitledmapmod.common.items.ModItems;
+import at.petrak.untitledmapmod.common.network.ModMessages;
 import at.petrak.untitledmapmod.datagen.Advancements;
 import at.petrak.untitledmapmod.datagen.ModDataGenerators;
+import at.petrak.untitledmapmod.datagen.lootmods.ModLootMods;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -32,6 +36,12 @@ public class UntitledMapMod {
         modBus.register(ModDataGenerators.class);
         modBus.register(Advancements.class); // register triggers
         ModItems.ITEMS.register(modBus);
+        ModBlocks.BLOCKS.register(modBus);
+        ModLootMods.LOOT_MODS.register(modBus);
+
+        evBus.register(ModCapabilities.class);
+
+        ModMessages.register();
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
             evBus.register(MinimapOverlay.class);

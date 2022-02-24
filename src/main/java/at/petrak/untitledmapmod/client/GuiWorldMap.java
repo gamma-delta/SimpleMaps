@@ -1,9 +1,21 @@
 package at.petrak.untitledmapmod.client;
 
 import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.common.blocks.BlockMarker;
+import at.petrak.untitledmapmod.common.network.ModMessages;
+import at.petrak.untitledmapmod.common.network.MsgMarkerLocsSyn;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.datafixers.util.Pair;
+import com.mojang.math.Quaternion;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
@@ -11,8 +23,14 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.phys.Vec2;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GuiWorldMap extends Screen {
     private static final float BLOCKS_TO_PIXELS = 2f;
@@ -34,40 +52,49 @@ public class GuiWorldMap extends Screen {
     // Block position at the center of the displayed map
     private Vec2 centerPos;
     private LocalPlayer player;
+    private List<Pair<BlockPos, DyeColor>> markerLocations;
+
+    private MapWidget mapWidget;
 
     public GuiWorldMap(LocalPlayer player) {
         super(new TextComponent(""));
 
         this.centerPos = new Vec2((float) player.getX(), (float) player.getZ());
         this.player = player;
+        this.markerLocations = new ArrayList<>();
+    }
+
+    public void loadMarkerLocations(List<BlockPos> markerLocations) {
+        for (var pos : markerLocations) {
+            var blockThere = player.level.getBlockState(pos);
+            if (blockThere.getBlock() instanceof BlockMarker marker) {
+                this.markerLocations.add(new Pair<>(pos, marker.color));
+            } else {
+                UntitledMapMod.LOGGER.warn("did not find a marker at {}", pos);
+            }
+        }
+        UntitledMapMod.LOGGER.info("got: {}", this.markerLocations);
     }
 
     @Override
     protected void init() {
         this.blitTexture();
+
+        this.addRenderableWidget(this.mapWidget =
+            new MapWidget(width / 2f - MAP_WIDTH / 2f, height / 2f - MAP_HEIGHT / 2f));
+
+        ModMessages.getNetwork().sendToServer(new MsgMarkerLocsSyn());
     }
 
     @Override
-    public void render(PoseStack ps, int pMouseX, int pMouseY, float pPartialTick) {
-        var oldShader = RenderSystem.getShader();
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    public void mouseMoved(double pMouseX, double pMouseY) {
+        this.mapWidget.mouseMoved(pMouseX, pMouseY);
+    }
 
-        ps.pushPose();
-
-        ps.pushPose();
-        ps.translate(mapCorner().x, mapCorner().y, 0);
-        MapHelper.renderQuad(ps, 192f, 144f, 0f, 80f / 256f, 192f / 256f, 144f / 256f, MapHelper.TEX_MAP_ICONS);
-        ps.popPose();
-
-        ps.translate(0, 0, 1);
-        ps.pushPose();
-        ps.translate(mapCorner().x, mapCorner().y, 0);
-        MapHelper.renderQuad(ps, MAP_WIDTH, MAP_HEIGHT, 0f, 0, 1, 1, TEX_WORLD_MAP);
-        ps.popPose();
-
-        ps.pushPose();
-
-        RenderSystem.setShader(() -> oldShader);
+    @Override
+    public boolean mouseReleased(double pMouseX, double pMouseY, int pButton) {
+        this.mapWidget.mouseAnchor = null;
+        return super.mouseReleased(pMouseX, pMouseY, pButton);
     }
 
     private void blitTexture() {
@@ -76,12 +103,131 @@ public class GuiWorldMap extends Screen {
         MapHelper.blitMapToTexture(this.player, centerPos, true, WORLD_MAP);
     }
 
-    private Vec2 mapCorner() {
-        return new Vec2(width / 2f - MAP_WIDTH / 2f, height / 2f - MAP_HEIGHT / 2f);
+    private class MapWidget implements Widget, GuiEventListener, NarratableEntry {
+        private float x, y;
+        public Vec2 mouseAnchor = null;
+        public Vec2 posAnchor = null;
+
+        public MapWidget(float x, float y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public boolean isMouseOver(double pMouseX, double pMouseY) {
+            return x < pMouseX && pMouseX < x + MAP_WIDTH && y < pMouseY && pMouseY < y + MAP_HEIGHT;
+        }
+
+        @Override
+        public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
+            mouseAnchor = new Vec2((float) pMouseX, (float) pMouseY);
+            posAnchor = GuiWorldMap.this.centerPos;
+            return true;
+        }
+
+        @Override
+        public void mouseMoved(double pMouseX, double pMouseY) {
+            if (this.mouseAnchor != null && this.posAnchor != null) {
+                centerPos = posAnchor.add(new Vec2(mouseAnchor.x - (float) pMouseX, mouseAnchor.y - (float) pMouseY));
+                blitTexture();
+            }
+        }
+
+        @Override
+        public boolean mouseReleased(double pMouseX, double pMouseY, int pButton) {
+            this.mouseAnchor = null;
+            posAnchor = null;
+            return true;
+        }
+
+        @Override
+        public void render(PoseStack ps, int pMouseX, int pMouseY, float pPartialTick) {
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            ps.translate(x, y, 0);
+
+            ps.pushPose();
+            MapHelper.renderQuad(ps, MAP_WIDTH, MAP_HEIGHT, 0f, 0, 1, 1, TEX_WORLD_MAP);
+            ps.popPose();
+
+            // Markers
+            ps.translate(0, 0, 1);
+            ps.pushPose();
+            ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
+            RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
+            RenderSystem.setShaderTexture(0, MapHelper.TEX_MAP_DECO);
+
+            for (var pair : markerLocations) {
+                var pos = pair.getFirst();
+                var dx = pos.getX() - centerPos.x;
+                var dy = pos.getZ() - centerPos.y;
+                if (Mth.abs(dx) < MAP_BLOCK_WIDTH / 2f && Mth.abs(dy) < MAP_BLOCK_HEIGHT / 2f) {
+                    ps.pushPose();
+
+                    var px = dx / BLOCKS_TO_PIXELS;
+                    var py = dy / BLOCKS_TO_PIXELS;
+                    ps.translate(px, py, 0);
+                    ps.scale(1f / BLOCKS_TO_PIXELS, 1f / BLOCKS_TO_PIXELS, 1);
+
+                    var color = pair.getSecond().getTextColor() | 0xff_000000;
+
+
+                    var mat = ps.last().pose();
+                    var tess = Tesselator.getInstance();
+                    var buf = tess.getBuilder();
+
+                    buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
+                    buf.vertex(mat, 0, 0, 0)
+                        .color(color)
+                        .uv(8f / 16f, 0)
+                        .endVertex();
+                    buf.vertex(mat, 0, 4f, 0)
+                        .color(color)
+                        .uv(8f / 16f, 4f / 16f)
+                        .endVertex();
+                    buf.vertex(mat, 4f, 4f, 0)
+                        .color(color)
+                        .uv(12f / 16f, 4f / 16f)
+                        .endVertex();
+                    buf.vertex(mat, 4f, 0, 0)
+                        .color(color)
+                        .uv(12f / 16f, 0)
+                        .endVertex();
+                    tess.end();
+
+                    ps.popPose();
+                }
+            }
+            ps.popPose();
+
+            // Player icon
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            ps.translate(0, 0, 1);
+            ps.pushPose();
+            ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
+            ps.translate(
+                (player.getX() - centerPos.x) / BLOCKS_TO_PIXELS,
+                (player.getZ() - centerPos.y) / BLOCKS_TO_PIXELS,
+                0);
+            ps.mulPose(Quaternion.fromXYZ(0f, 0f, Mth.PI + player.getYRot() / 180f * 3.14159f));
+            ps.translate(-5f / 4f, -7f / 4f, 0f);
+            MapHelper.renderQuad(ps, 5f / 2f, 7f / 2f, 2f / 128f, 0f, 5f / 128f, 7f / 128f,
+                MapHelper.TEX_VANILLA_MAP_DECO);
+            ps.popPose();
+        }
+
+
+        @Override
+        public NarrationPriority narrationPriority() {
+            return NarrationPriority.FOCUSED;
+        }
+
+        @Override
+        public void updateNarration(NarrationElementOutput pNarrationElementOutput) {
+        }
     }
 
     @SubscribeEvent
-    public static void keypress(Keyp evt) {
+    public static void checkKeypresses(TickEvent.ClientTickEvent evt) {
         var mc = Minecraft.getInstance();
         if (ModKeybinds.OPEN_WORLD_MAP.isDown() && mc.level != null && mc.screen == null) {
             mc.setScreen(new GuiWorldMap(mc.player));

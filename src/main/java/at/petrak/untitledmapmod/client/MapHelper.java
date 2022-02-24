@@ -15,10 +15,12 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.MaterialColor;
 
 public class MapHelper {
-    public static final ResourceLocation TEX_VANILLA_MAP_ICONS = new ResourceLocation("minecraft",
-        "textures/map/map_icons.png");
-    public static final ResourceLocation TEX_MAP_ICONS = new ResourceLocation(UntitledMapMod.MOD_ID,
+    public static final ResourceLocation TEX_MAP_MAIN = new ResourceLocation(UntitledMapMod.MOD_ID,
         "textures/gui/map.png");
+    public static final ResourceLocation TEX_MAP_DECO = new ResourceLocation(UntitledMapMod.MOD_ID,
+        "textures/gui/decorations.png");
+    public static final ResourceLocation TEX_VANILLA_MAP_DECO = new ResourceLocation("minecraft",
+        "textures/map/map_icons.png");
 
     /**
      * Draw the region around the player to the texture and upload it.
@@ -54,7 +56,7 @@ public class MapHelper {
                     // -- https://minecraft.fandom.com/wiki/Map_item_format#Map_Pixel_Art
                     var northHeight = world.getHeight(Heightmap.Types.WORLD_SURFACE, x, z - 1);
                     var delta = height - northHeight;
-                    brightness = 220 + delta * 4;
+                    brightness = 220 + delta * 8;
                 } else if (bs.isAir() || !bs.getFluidState().isEmpty()) {
                     // As per popular map mods, display "solid" things as black/dark and the floor as bright
                     // Scan down
@@ -84,12 +86,17 @@ public class MapHelper {
                     }
                 } // else keep it as black
 
-                brightness = Mth.clamp(brightness, 0, 255);
-                int r = (color.col >> 16 & 255) * brightness / 255;
-                int g = (color.col >> 8 & 255) * brightness / 255;
-                int b = (color.col & 255) * brightness / 255;
-                int colorInt = -16777216 | b << 16 | g << 8 | r;
-                texture.getPixels().setPixelRGBA(px, py, colorInt | 0xFF000000);
+                if (color == MaterialColor.NONE) {
+                    // transparent
+                    texture.getPixels().setPixelRGBA(px, py, 0);
+                } else {
+                    brightness = Mth.clamp(brightness, 0, 255);
+                    int r = (color.col >> 16 & 255) * brightness / 255;
+                    int g = (color.col >> 8 & 255) * brightness / 255;
+                    int b = (color.col & 255) * brightness / 255;
+                    int colorInt = -16777216 | b << 16 | g << 8 | r;
+                    texture.getPixels().setPixelRGBA(px, py, colorInt | 0xFF000000);
+                }
             }
         }
 
