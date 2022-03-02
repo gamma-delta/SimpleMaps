@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:compass"
+    },
+    "title": {
+      "translate": "advancement.untitledmapmod:root"
+    },
+    "description": {
+      "translate": "advancement.untitledmapmod:root.desc"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false,
+    "background": "minecraft:textures/block/cartography_table_side3.png"
+  },
+  "criteria": {
+    "i_cant_think_of_anything": {
+      "trigger": "minecraft:tick",
+      "conditions": {}
+    }
+  },
+  "requirements": [
+    [
+      "i_cant_think_of_anything"
+    ]
+  ]
+}

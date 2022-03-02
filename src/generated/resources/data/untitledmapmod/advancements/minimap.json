@@ -1,13 +1,14 @@
 {
+  "parent": "untitledmapmod:root",
   "display": {
     "icon": {
       "item": "untitledmapmod:minimap"
     },
     "title": {
-      "translate": "advancement.untitledmapmod.minimap"
+      "translate": "advancement.untitledmapmod:minimap"
     },
     "description": {
-      "translate": "advancement.untitledmapmod.minimap.desc"
+      "translate": "advancement.untitledmapmod:minimap.desc"
     },
     "frame": "task",
     "show_toast": true,

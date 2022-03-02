@@ -1,13 +1,14 @@
 {
+  "parent": "untitledmapmod:root",
   "display": {
     "icon": {
       "item": "untitledmapmod:world_map"
     },
     "title": {
-      "translate": "advancement.untitledmapmod.world_map"
+      "translate": "advancement.untitledmapmod:world_map"
     },
     "description": {
-      "translate": "advancement.untitledmapmod.world_map.desc"
+      "translate": "advancement.untitledmapmod:world_map.desc"
     },
     "frame": "task",
     "show_toast": true,
