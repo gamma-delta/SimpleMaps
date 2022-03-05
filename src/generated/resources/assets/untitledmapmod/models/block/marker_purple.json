@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube_bottom_top",
   "textures": {
-    "all": "minecraft:block/purple_wool"
+    "side": "untitledmapmod:block/marker_purple_side",
+    "bottom": "untitledmapmod:block/marker_bottom",
+    "top": "untitledmapmod:block/marker_purple_top"
   }
 }

@@ -41,7 +41,10 @@ public class GuiWorldMap extends Screen {
     private static final int MAP_BLOCK_WIDTH = (int) (MAP_WIDTH * BLOCKS_TO_PIXELS);
     private static final int MAP_BLOCK_HEIGHT = (int) (MAP_HEIGHT * BLOCKS_TO_PIXELS);
     private static DynamicTexture WORLD_MAP;
+
     private static final ResourceLocation TEX_WORLD_MAP = new ResourceLocation(UntitledMapMod.MOD_ID, "world_map");
+    private static final ResourceLocation TEX_BORDER = new ResourceLocation(UntitledMapMod.MOD_ID,
+        "textures/gui/border.png");
 
     public static void initTextures() {
         WORLD_MAP = new DynamicTexture(MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, true);
@@ -146,6 +149,12 @@ public class GuiWorldMap extends Screen {
             ps.translate(x, y, 0);
 
             ps.pushPose();
+            MapHelper.renderQuad(ps, MAP_WIDTH, MAP_HEIGHT, 0, 80f / 255f, MAP_WIDTH / 255f, MAP_HEIGHT / 255f,
+                MapHelper.TEX_MAP_MAIN);
+            ps.popPose();
+
+            ps.translate(0, 0, 1);
+            ps.pushPose();
             MapHelper.renderQuad(ps, MAP_WIDTH, MAP_HEIGHT, 0f, 0, 1, 1, TEX_WORLD_MAP);
             ps.popPose();
 
@@ -212,6 +221,12 @@ public class GuiWorldMap extends Screen {
             ps.translate(-5f / 4f, -7f / 4f, 0f);
             MapHelper.renderQuad(ps, 5f / 2f, 7f / 2f, 2f / 128f, 0f, 5f / 128f, 7f / 128f,
                 MapHelper.TEX_VANILLA_MAP_DECO);
+            ps.popPose();
+
+            ps.translate(0, 0, 1);
+            ps.pushPose();
+            ps.translate(-16, -16, 0);
+            MapHelper.renderQuad(ps, 224, 140, 0, 0, 224f / 256f, 140f / 256f, TEX_BORDER);
             ps.popPose();
         }
 

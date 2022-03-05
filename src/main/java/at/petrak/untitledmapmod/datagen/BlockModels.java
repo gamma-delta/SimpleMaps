@@ -17,12 +17,16 @@ public class BlockModels extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
+        var bottomLoc = new ResourceLocation(UntitledMapMod.MOD_ID, "block/marker_bottom");
         for (var markerRobj : ModBlocks.MARKERS) {
             var marker = markerRobj.get();
             var name = "marker_" + marker.color.getName();
-            var model = new ResourceLocation("block/" + marker.color.getName() + "_wool");
-            simpleBlock(marker, models().cubeAll(name, model));
-            simpleBlockItem(marker, models().cubeAll(name, model));
+            var sideLoc = new ResourceLocation(UntitledMapMod.MOD_ID,
+                "block/marker_" + marker.color.getName() + "_side");
+            var topLoc = new ResourceLocation(UntitledMapMod.MOD_ID, "block/marker_" + marker.color.getName() + "_top");
+            var model = models().cubeBottomTop(name, sideLoc, bottomLoc, topLoc);
+            simpleBlock(marker, model);
+            simpleBlockItem(marker, model);
         }
     }
 }
