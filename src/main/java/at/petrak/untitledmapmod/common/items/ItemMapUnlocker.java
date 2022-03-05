@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.common.items;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import at.petrak.untitledmapmod.common.advancement.AdvancementHelper;
 import at.petrak.untitledmapmod.datagen.Advancements;
 import net.minecraft.resources.ResourceLocation;
@@ -24,7 +24,7 @@ public class ItemMapUnlocker extends Item {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand used) {
-        var id = new ResourceLocation(UntitledMapMod.MOD_ID, this.isMinimap ? "minimap" : "world_map");
+        var id = new ResourceLocation(SimpleMapMod.MOD_ID, this.isMinimap ? "minimap" : "world_map");
         if (!AdvancementHelper.isDone(player, id)) {
             if (player instanceof ServerPlayer splayer) {
                 Advancements.USE_MAP_UNLOCKER_TRIGGER.trigger(splayer, this.isMinimap);

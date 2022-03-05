@@ -19,9 +19,9 @@ apply plugin: 'maven-publish'
 apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'org.spongepowered.mixin'
 
-version = '0.1.0'
-group = 'at.petrak.untitledmapmod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'untitledmapmod'
+version = '0.2.0'
+group = 'at.petrak.simplemaps' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'simplemaps'
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -106,7 +106,7 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            args '--mod', 'untitledmapmod', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            args '--mod', 'simplemaps', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
 
             mods {
                 examplemod {
@@ -121,8 +121,8 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 mixin {
-    add sourceSets.main, 'untitledmapmod.mixins.refmap.json'
-    config 'untitledmapmod.mixins.json'
+    add sourceSets.main, 'simplemaps.mixins.refmap.json'
+    config 'simplemaps.mixins.json'
     dumpTargetOnFailure true
 }
 
@@ -161,7 +161,7 @@ dependencies {
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "untitledmapmod",
+                "Specification-Title"     : "simplemaps",
                 "Specification-Vendor"    : "petrakat",
                 "Specification-Version"   : "1", // We are version 1 of ourselves
                 "Implementation-Title"    : project.name,

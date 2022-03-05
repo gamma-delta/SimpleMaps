@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.common.blocks;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import at.petrak.untitledmapmod.common.capability.ModCapabilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.DyeColor;
@@ -34,7 +34,7 @@ public class BlockMarker extends Block {
         maybeCap.ifPresent(locations -> {
             var removed = locations.removeLocation(pos);
             if (!removed) {
-                UntitledMapMod.LOGGER.warn("{} didn't actually have a marker on it", pos);
+                SimpleMapMod.LOGGER.warn("{} didn't actually have a marker on it", pos);
             }
         });
 

@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.datagen.lootmods;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
@@ -13,13 +13,13 @@ import net.minecraftforge.registries.RegistryObject;
 
 public class ModLootMods extends GlobalLootModifierProvider {
     public static final DeferredRegister<GlobalLootModifierSerializer<?>> LOOT_MODS = DeferredRegister.create(
-        ForgeRegistries.LOOT_MODIFIER_SERIALIZERS, UntitledMapMod.MOD_ID);
+        ForgeRegistries.LOOT_MODIFIER_SERIALIZERS, SimpleMapMod.MOD_ID);
 
     private static final RegistryObject<MapModifier.Serializer> MAPS = LOOT_MODS.register(
         "maps", MapModifier.Serializer::new);
 
     public ModLootMods(DataGenerator gen) {
-        super(gen, UntitledMapMod.MOD_ID);
+        super(gen, SimpleMapMod.MOD_ID);
     }
 
     @Override

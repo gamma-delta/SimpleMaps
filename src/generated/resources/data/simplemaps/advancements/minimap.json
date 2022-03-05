@@ -1,0 +1,31 @@
+{
+  "parent": "simplemaps:root",
+  "display": {
+    "icon": {
+      "item": "simplemaps:minimap"
+    },
+    "title": {
+      "translate": "advancement.simplemaps:minimap"
+    },
+    "description": {
+      "translate": "advancement.simplemaps:minimap.desc"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "on_use": {
+      "trigger": "simplemaps:use_map_unlocker",
+      "conditions": {
+        "is_minimap": true
+      }
+    }
+  },
+  "requirements": [
+    [
+      "on_use"
+    ]
+  ]
+}

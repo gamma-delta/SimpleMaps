@@ -1,9 +1,9 @@
 modLoader = "javafml"
 loaderVersion = "[39,)"
-license = "All rights reserved"
+license = "MIT"
 #issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/"
 [[mods]]
-modId = "untitledmapmod"
+modId = "simplemaps"
 version = "${file.jarVersion}"
 displayName = "Untitled Map Mod"
 #displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
@@ -14,7 +14,7 @@ description = '''
 A simple, lightweight unlockable minimap.
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies.untitledmapmod]] #optional
+[[dependencies.simplemaps]] #optional
 # the modid of the dependency
 modId = "forge" #mandatory
 # Does this dependency have to exist - if not, ordering below must be specified
@@ -26,7 +26,7 @@ ordering = "NONE"
 # Side this dependency is applied on - BOTH, CLIENT or SERVER
 side = "BOTH"
 # Here's another dependency
-[[dependencies.untitledmapmod]]
+[[dependencies.simplemaps]]
 modId = "minecraft"
 mandatory = true
 # This version range declares a minimum of the current minecraft version up to but not including the next major version

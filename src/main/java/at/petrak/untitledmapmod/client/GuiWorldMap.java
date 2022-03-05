@@ -1,6 +1,7 @@
 package at.petrak.untitledmapmod.client;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
+import at.petrak.untitledmapmod.common.advancement.AdvancementHelper;
 import at.petrak.untitledmapmod.common.blocks.BlockMarker;
 import at.petrak.untitledmapmod.common.network.ModMessages;
 import at.petrak.untitledmapmod.common.network.MsgMarkerLocsSyn;
@@ -22,6 +23,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
@@ -42,8 +44,8 @@ public class GuiWorldMap extends Screen {
     private static final int MAP_BLOCK_HEIGHT = (int) (MAP_HEIGHT * BLOCKS_TO_PIXELS);
     private static DynamicTexture WORLD_MAP;
 
-    private static final ResourceLocation TEX_WORLD_MAP = new ResourceLocation(UntitledMapMod.MOD_ID, "world_map");
-    private static final ResourceLocation TEX_BORDER = new ResourceLocation(UntitledMapMod.MOD_ID,
+    private static final ResourceLocation TEX_WORLD_MAP = new ResourceLocation(SimpleMapMod.MOD_ID, "world_map");
+    private static final ResourceLocation TEX_BORDER = new ResourceLocation(SimpleMapMod.MOD_ID,
         "textures/gui/border.png");
 
     public static void initTextures() {
@@ -54,7 +56,7 @@ public class GuiWorldMap extends Screen {
 
     // Block position at the center of the displayed map
     private Vec2 centerPos;
-    private LocalPlayer player;
+    private final LocalPlayer player;
     private List<Pair<BlockPos, DyeColor>> markerLocations;
 
     private MapWidget mapWidget;
@@ -73,10 +75,10 @@ public class GuiWorldMap extends Screen {
             if (blockThere.getBlock() instanceof BlockMarker marker) {
                 this.markerLocations.add(new Pair<>(pos, marker.color));
             } else {
-                UntitledMapMod.LOGGER.warn("did not find a marker at {}", pos);
+                SimpleMapMod.LOGGER.warn("did not find a marker at {}", pos);
             }
         }
-        UntitledMapMod.LOGGER.info("got: {}", this.markerLocations);
+        SimpleMapMod.LOGGER.info("got: {}", this.markerLocations);
     }
 
     @Override
@@ -244,8 +246,14 @@ public class GuiWorldMap extends Screen {
     @SubscribeEvent
     public static void checkKeypresses(TickEvent.ClientTickEvent evt) {
         var mc = Minecraft.getInstance();
-        if (ModKeybinds.OPEN_WORLD_MAP.isDown() && mc.level != null && mc.screen == null) {
-            mc.setScreen(new GuiWorldMap(mc.player));
+        if (ModKeybinds.OPEN_WORLD_MAP.isDown() && mc.player != null && mc.screen == null) {
+            if (AdvancementHelper.isDone(mc.player, new ResourceLocation(SimpleMapMod.MOD_ID, "world_map"))) {
+                mc.setScreen(new GuiWorldMap(mc.player));
+            } else {
+                mc.player.displayClientMessage(
+                    new TranslatableComponent(SimpleMapMod.MOD_ID + ".message.fail_open_map"),
+                    true);
+            }
         }
     }
 }

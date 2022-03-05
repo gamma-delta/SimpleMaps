@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.client;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import at.petrak.untitledmapmod.common.advancement.AdvancementHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Quaternion;
@@ -22,7 +22,7 @@ public class MinimapOverlay {
     private static final int MAP_WIDTH = 128;
     private static final int MAP_HEIGHT = 128;
     private static DynamicTexture MINIMAP;
-    private static final ResourceLocation TEX_MINIMAP = new ResourceLocation(UntitledMapMod.MOD_ID, "minimap");
+    private static final ResourceLocation TEX_MINIMAP = new ResourceLocation(SimpleMapMod.MOD_ID, "minimap");
 
     private static BlockPos cachedPos = null;
 
@@ -40,7 +40,7 @@ public class MinimapOverlay {
         }
 
         var player = mc.player;
-        if (!AdvancementHelper.isDone(player, new ResourceLocation(UntitledMapMod.MOD_ID, "minimap"))) {
+        if (!AdvancementHelper.isDone(player, new ResourceLocation(SimpleMapMod.MOD_ID, "minimap"))) {
             return;
         }
 
@@ -134,7 +134,7 @@ public class MinimapOverlay {
     public static void updateMap(TickEvent.ClientTickEvent evt) {
         var mc = Minecraft.getInstance();
         var player = mc.player;
-        if (!AdvancementHelper.isDone(player, new ResourceLocation(UntitledMapMod.MOD_ID, "minimap"))) {
+        if (!AdvancementHelper.isDone(player, new ResourceLocation(SimpleMapMod.MOD_ID, "minimap"))) {
             return;
         }
 

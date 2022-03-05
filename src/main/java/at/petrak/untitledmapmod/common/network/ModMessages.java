@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.common.network;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -8,7 +8,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 public class ModMessages {
     private static final String PROTOCOL_VERSION = "1";
     private static final SimpleChannel NETWORK = NetworkRegistry.newSimpleChannel(
-        new ResourceLocation(UntitledMapMod.MOD_ID, "main"),
+        new ResourceLocation(SimpleMapMod.MOD_ID, "main"),
         () -> PROTOCOL_VERSION,
         PROTOCOL_VERSION::equals,
         PROTOCOL_VERSION::equals

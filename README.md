@@ -1,3 +1,3 @@
-# Untitled Map Mod
+# Simple Maps
 
 another minimap mod

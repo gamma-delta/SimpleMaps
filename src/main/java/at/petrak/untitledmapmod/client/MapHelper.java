@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.client;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -15,9 +15,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.MaterialColor;
 
 public class MapHelper {
-    public static final ResourceLocation TEX_MAP_MAIN = new ResourceLocation(UntitledMapMod.MOD_ID,
+    public static final ResourceLocation TEX_MAP_MAIN = new ResourceLocation(SimpleMapMod.MOD_ID,
         "textures/gui/map.png");
-    public static final ResourceLocation TEX_MAP_DECO = new ResourceLocation(UntitledMapMod.MOD_ID,
+    public static final ResourceLocation TEX_MAP_DECO = new ResourceLocation(SimpleMapMod.MOD_ID,
         "textures/gui/decorations.png");
     public static final ResourceLocation TEX_VANILLA_MAP_DECO = new ResourceLocation("minecraft",
         "textures/map/map_icons.png");

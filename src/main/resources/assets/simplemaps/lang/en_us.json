@@ -1,0 +1,32 @@
+{
+    "item.simplemaps.minimap": "Minimap",
+    "item.simplemaps.world_map": "World Map",
+    "block.simplemaps.marker_white": "White Marker",
+    "block.simplemaps.marker_orange": "Orange Marker",
+    "block.simplemaps.marker_magenta": "Magenta Marker",
+    "block.simplemaps.marker_light_blue": "Light Blue Marker",
+    "block.simplemaps.marker_yellow": "Yellow Marker",
+    "block.simplemaps.marker_lime": "Lime Marker",
+    "block.simplemaps.marker_pink": "Pink Marker",
+    "block.simplemaps.marker_gray": "Gray Marker",
+    "block.simplemaps.marker_light_gray": "Light Gray Marker",
+    "block.simplemaps.marker_cyan": "Cyan Marker",
+    "block.simplemaps.marker_purple": "Purple Marker",
+    "block.simplemaps.marker_blue": "Blue Marker",
+    "block.simplemaps.marker_brown": "Brown Marker",
+    "block.simplemaps.marker_green": "Green Marker",
+    "block.simplemaps.marker_red": "Red Marker",
+    "block.simplemaps.marker_black": "Black Marker",
+    "itemGroup.simplemaps": "Simple Maps",
+
+    "advancement.simplemaps:root": "Simple Maps",
+    "advancement.simplemaps:root.desc": "Lightweight, Vanilla-style maps",
+    "advancement.simplemaps:minimap": "Unlock Minimap",
+    "advancement.simplemaps:minimap.desc": "A small, omnipresent view of the world around you.",
+    "advancement.simplemaps:world_map": "Unlock World Map",
+    "advancement.simplemaps:world_map.desc": "A large map you can bring up and pan around.",
+
+    "simplemaps.gui.keygroup": "Simple Maps",
+    "simplemaps.keybind.open_world_map": "Open World Map",
+    "simplemaps.message.fail_open_map": "You haven't unlocked the world map!"
+}

@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.datagen;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import at.petrak.untitledmapmod.common.advancement.UseMapUnlockerTrigger;
 import at.petrak.untitledmapmod.common.items.ModItems;
 import net.minecraft.advancements.Advancement;
@@ -32,8 +32,8 @@ public class Advancements extends AdvancementProvider {
     @Override
     protected void registerAdvancements(Consumer<Advancement> consumer, ExistingFileHelper fileHelper) {
         var root = Advancement.Builder.advancement()
-            .display(Items.COMPASS, new TranslatableComponent("advancement." + UntitledMapMod.MOD_ID + ":root"),
-                new TranslatableComponent("advancement." + UntitledMapMod.MOD_ID + ":root.desc"),
+            .display(Items.COMPASS, new TranslatableComponent("advancement." + SimpleMapMod.MOD_ID + ":root"),
+                new TranslatableComponent("advancement." + SimpleMapMod.MOD_ID + ":root.desc"),
                 new ResourceLocation("minecraft:textures/block/cartography_table_side3.png"),
                 FrameType.TASK, true, true, false)
             .addCriterion("i_cant_think_of_anything", new TickTrigger.TriggerInstance(EntityPredicate.Composite.ANY))
@@ -62,7 +62,7 @@ public class Advancements extends AdvancementProvider {
     }
 
     protected static DisplayInfo simple(ItemLike icon, String name, FrameType frameType) {
-        var expandedName = "advancement." + UntitledMapMod.MOD_ID + ":" + name;
+        var expandedName = "advancement." + SimpleMapMod.MOD_ID + ":" + name;
         return new DisplayInfo(new ItemStack(icon.asItem()),
             new TranslatableComponent(expandedName),
             new TranslatableComponent(expandedName + ".desc"),
@@ -70,6 +70,6 @@ public class Advancements extends AdvancementProvider {
     }
 
     private static String prefix(String name) {
-        return UntitledMapMod.MOD_ID + ":" + name;
+        return SimpleMapMod.MOD_ID + ":" + name;
     }
 }

@@ -1,9 +1,9 @@
 {
   "replace": false,
   "entries": [
-    "untitledmapmod:maps_cartographer",
-    "untitledmapmod:maps_stronghold_library",
-    "untitledmapmod:maps_dungeon",
-    "untitledmapmod:maps_shipwreck"
+    "simplemaps:maps_cartographer",
+    "simplemaps:maps_stronghold_library",
+    "simplemaps:maps_dungeon",
+    "simplemaps:maps_shipwreck"
   ]
 }

@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.common.items;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -9,8 +9,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class ModItems {
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, UntitledMapMod.MOD_ID);
-    public static final CreativeModeTab TAB = new CreativeModeTab(UntitledMapMod.MOD_ID) {
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS,
+        SimpleMapMod.MOD_ID);
+    public static final CreativeModeTab TAB = new CreativeModeTab(SimpleMapMod.MOD_ID) {
         @Override
         public ItemStack makeIcon() {
             return new ItemStack(MINIMAP::get);
@@ -18,9 +19,9 @@ public class ModItems {
     };
 
     public static final RegistryObject<Item> MINIMAP = ITEMS.register("minimap",
-            () -> new ItemMapUnlocker(true, unstackable()));
+        () -> new ItemMapUnlocker(true, unstackable()));
     public static final RegistryObject<Item> WORLD_MAP = ITEMS.register("world_map",
-            () -> new ItemMapUnlocker(false, unstackable()));
+        () -> new ItemMapUnlocker(false, unstackable()));
 
 
     public static Item.Properties props() {

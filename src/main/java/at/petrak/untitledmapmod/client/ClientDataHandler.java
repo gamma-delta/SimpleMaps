@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.client;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import at.petrak.untitledmapmod.common.PosXZ;
 import net.minecraft.FileUtil;
 import net.minecraft.client.Minecraft;
@@ -50,7 +50,7 @@ public class ClientDataHandler {
                 instance = new ClientProfile(seenPoses);
                 return instance;
             } catch (Exception e) {
-                UntitledMapMod.LOGGER.warn("Error trying to load client data: " + e.getMessage());
+                SimpleMapMod.LOGGER.warn("Error trying to load client data: " + e.getMessage());
                 instance = defaultProfile();
                 return instance;
             }

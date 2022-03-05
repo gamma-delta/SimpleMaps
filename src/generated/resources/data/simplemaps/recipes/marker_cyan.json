@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "BDB",
+    "BBB"
+  ],
+  "key": {
+    "D": {
+      "item": "minecraft:cyan_dye"
+    },
+    "C": {
+      "item": "minecraft:compass"
+    },
+    "B": {
+      "item": "minecraft:chiseled_stone_bricks"
+    }
+  },
+  "result": {
+    "item": "simplemaps:marker_cyan"
+  }
+}

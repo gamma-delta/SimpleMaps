@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "side": "simplemaps:block/marker_black_side",
+    "bottom": "simplemaps:block/marker_bottom",
+    "top": "simplemaps:block/marker_black_top"
+  }
+}

@@ -1,6 +1,6 @@
 package at.petrak.untitledmapmod.datagen;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import at.petrak.untitledmapmod.common.items.ModItems;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.resources.ResourceLocation;
@@ -10,7 +10,7 @@ import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class ItemModels extends ItemModelProvider {
     public ItemModels(DataGenerator generator, ExistingFileHelper existingFileHelper) {
-        super(generator, UntitledMapMod.MOD_ID, existingFileHelper);
+        super(generator, SimpleMapMod.MOD_ID, existingFileHelper);
     }
 
     @Override
@@ -25,6 +25,6 @@ public class ItemModels extends ItemModelProvider {
 
     public void simpleItem(ResourceLocation path) {
         singleTexture(path.getPath(), new ResourceLocation("item/generated"),
-                "layer0", new ResourceLocation(UntitledMapMod.MOD_ID, "item/" + path.getPath()));
+            "layer0", new ResourceLocation(SimpleMapMod.MOD_ID, "item/" + path.getPath()));
     }
 }

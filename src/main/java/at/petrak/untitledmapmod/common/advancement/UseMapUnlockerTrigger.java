@@ -1,13 +1,13 @@
 package at.petrak.untitledmapmod.common.advancement;
 
-import at.petrak.untitledmapmod.UntitledMapMod;
+import at.petrak.untitledmapmod.SimpleMapMod;
 import com.google.gson.JsonObject;
 import net.minecraft.advancements.critereon.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 public class UseMapUnlockerTrigger extends SimpleCriterionTrigger<UseMapUnlockerTrigger.Instance> {
-    private static final ResourceLocation ID = new ResourceLocation(UntitledMapMod.MOD_ID, "use_map_unlocker");
+    private static final ResourceLocation ID = new ResourceLocation(SimpleMapMod.MOD_ID, "use_map_unlocker");
 
     private static final String TAG_IS_MINIMAP = "is_minimap";
 
