@@ -1,12 +1,12 @@
 modLoader = "javafml"
 loaderVersion = "[39,)"
 license = "MIT"
-#issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/"
+issueTrackerURL = "https://github.com/gamma-delta/SimpleMaps/issues"
 [[mods]]
 modId = "simplemaps"
 version = "${file.jarVersion}"
-displayName = "Untitled Map Mod"
-#displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
+displayName = "Simple Maps"
+displayURL = "https://github.com/gamma-delta/SimpleMaps" #optional
 logoFile = "examplemod.png"
 credits = "Commissioned by Darkfiend"
 authors = "petrak@"
