@@ -1,0 +1,21 @@
+{
+  "conditions": [
+    {
+      "condition": "forge:loot_table_id",
+      "loot_table_id": "minecraft:chests/village/village_cartographer"
+    },
+    {
+      "condition": "minecraft:random_chance",
+      "chance": 0.8
+    }
+  ],
+  "item": "simplemaps:minimap",
+  "functions": [
+    {
+      "function": "minecraft:set_count",
+      "count": 1.0,
+      "add": false
+    }
+  ],
+  "type": "paucal:add_item"
+}

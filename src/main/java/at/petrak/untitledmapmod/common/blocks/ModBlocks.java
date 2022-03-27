@@ -15,19 +15,19 @@ public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
         DeferredRegister.create(ForgeRegistries.BLOCKS, SimpleMapMod.MOD_ID);
 
-    public static final RegistryObject<BlockMarker> MARKERS[] = new RegistryObject[16];
+    public static final RegistryObject<BlockMarker>[] MARKERS = new RegistryObject[16];
 
     static {
-        var markerProps = BlockBehaviour.Properties.of(Material.STONE);
+        var markerProps = BlockBehaviour.Properties.of(Material.STONE)
+            .strength(3.5f);
         for (int i = 0; i < DyeColor.values().length; i++) {
             var color = DyeColor.values()[i];
-            var block = new BlockMarker(color, markerProps);
             var name = "marker_" + color.getName();
 
-            ModItems.ITEMS.register(name, () -> new BlockItem(block, ModItems.props()));
-            RegistryObject<BlockMarker> marker = BLOCKS.register(name, () -> block);
+            RegistryObject<BlockMarker> marker = BLOCKS.register(name, () -> new BlockMarker(color, markerProps));
             MARKERS[i] = marker;
+            int finalI = i;
+            ModItems.ITEMS.register(name, () -> new BlockItem(MARKERS[finalI].get(), ModItems.props()));
         }
     }
-
 }

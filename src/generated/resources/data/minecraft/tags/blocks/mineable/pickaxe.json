@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "simplemaps:marker_white",
+    "simplemaps:marker_orange",
+    "simplemaps:marker_magenta",
+    "simplemaps:marker_light_blue",
+    "simplemaps:marker_yellow",
+    "simplemaps:marker_lime",
+    "simplemaps:marker_pink",
+    "simplemaps:marker_gray",
+    "simplemaps:marker_light_gray",
+    "simplemaps:marker_cyan",
+    "simplemaps:marker_purple",
+    "simplemaps:marker_blue",
+    "simplemaps:marker_brown",
+    "simplemaps:marker_green",
+    "simplemaps:marker_red",
+    "simplemaps:marker_black"
+  ]
+}

@@ -17,6 +17,8 @@ public class ModDataGenerators {
         if (ev.includeServer()) {
             gen.addProvider(new Advancements(gen, efh));
             gen.addProvider(new Recipes(gen));
+            gen.addProvider(new LootTables(gen));
+            gen.addProvider(new ModBlockTags(gen, efh));
         }
     }
 }

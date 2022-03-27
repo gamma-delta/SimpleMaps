@@ -1,9 +1,13 @@
 {
   "replace": false,
   "entries": [
-    "simplemaps:maps_cartographer",
-    "simplemaps:maps_stronghold_library",
-    "simplemaps:maps_dungeon",
-    "simplemaps:maps_shipwreck"
+    "simplemaps:world_map_shipwreck",
+    "simplemaps:minmap_stronghold_library",
+    "simplemaps:world_map_dungeon",
+    "simplemaps:minmap_shipwreck",
+    "simplemaps:world_map_cartographer",
+    "simplemaps:world_map_stronghold_library",
+    "simplemaps:minmap_dungeon",
+    "simplemaps:minmap_cartographer"
   ]
 }
