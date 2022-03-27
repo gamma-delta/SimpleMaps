@@ -25,13 +25,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 public class GuiWorldMap extends Screen {
@@ -42,31 +45,60 @@ public class GuiWorldMap extends Screen {
 
     private static final int MAP_BLOCK_WIDTH = (int) (MAP_WIDTH * BLOCKS_TO_PIXELS);
     private static final int MAP_BLOCK_HEIGHT = (int) (MAP_HEIGHT * BLOCKS_TO_PIXELS);
-    private static DynamicTexture WORLD_MAP;
 
-    private static final ResourceLocation TEX_WORLD_MAP = new ResourceLocation(SimpleMapMod.MOD_ID, "world_map");
+    private static final int PATCH_SIZE = 64;
+    private static final int PATCHES_ACROSS = MAP_WIDTH / PATCH_SIZE + 2;
+    private static final int PATCHES_DOWN = MAP_HEIGHT / PATCH_SIZE + 2;
+
+    private static DynamicTexture[] PATCHES = new DynamicTexture[PATCHES_ACROSS * PATCHES_DOWN];
+
+    private static final String TEX_WORLD_MAP_STUB = SimpleMapMod.MOD_ID + ":world_map/";
     private static final ResourceLocation TEX_BORDER = new ResourceLocation(SimpleMapMod.MOD_ID,
         "textures/gui/border.png");
 
+
     public static void initTextures() {
-        WORLD_MAP = new DynamicTexture(MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, true);
         var tm = Minecraft.getInstance().textureManager;
-        tm.register(TEX_WORLD_MAP, WORLD_MAP);
+
+        for (int y = 0; y < PATCHES_ACROSS; y++) {
+            for (int x = 0; x < PATCHES_DOWN; x++) {
+                int idx = y * PATCHES_ACROSS + x;
+                var tex = PATCHES[idx] = new DynamicTexture(PATCH_SIZE, PATCH_SIZE, true);
+                // Tmp
+                tex.getPixels()
+                    .fillRect(0, 0, PATCHES_ACROSS, PATCHES_DOWN, FastColor.ARGB32.color(255, x * 25, y * 25, 0));
+                var name = new ResourceLocation(TEX_WORLD_MAP_STUB + idx);
+                tm.register(name, tex);
+            }
+        }
     }
 
-    // Block position at the center of the displayed map
-    private Vec2 centerPos;
+    // Pixel distance from the upper-left corner of patch (1, 1) to the upper-left corner of the visible rect.
+    private float patchOffsetX = 0;
+    private float patchOffsetY = 0;
+    private final BlockPos playerPos;
     private final LocalPlayer player;
     private List<Pair<BlockPos, DyeColor>> markerLocations;
 
     private MapWidget mapWidget;
 
+    private PatchLookup patchLookup = new PatchLookup();
+    private Deque<Integer> idxesToRedraw = new ArrayDeque<>();
+
     public GuiWorldMap(LocalPlayer player) {
         super(new TextComponent(""));
 
-        this.centerPos = new Vec2((float) player.getX(), (float) player.getZ());
+        this.playerPos = player.getOnPos();
         this.player = player;
         this.markerLocations = new ArrayList<>();
+
+        // Start with the identity mapping.
+        for (int y = 0; y < PATCHES_ACROSS; y++) {
+            for (int x = 0; x < PATCHES_DOWN; x++) {
+                int idx = y * PATCHES_ACROSS + x;
+                this.idxesToRedraw.add(idx);
+            }
+        }
     }
 
     public void loadMarkerLocations(List<BlockPos> markerLocations) {
@@ -92,6 +124,42 @@ public class GuiWorldMap extends Screen {
     }
 
     @Override
+    public void tick() {
+        if (this.patchOffsetX < 0) {
+            this.patchLookup.shift(-1, 0);
+            // and redraw the ones that have fallen off the right
+            for (int y = 0; y < PATCHES_DOWN; y++) {
+                this.idxesToRedraw.addLast(y * PATCHES_ACROSS + PATCHES_ACROSS - 1);
+            }
+
+        } else if (this.patchOffsetX >= PATCH_SIZE) {
+            this.patchLookup.shift(1, 0);
+            for (int y = 0; y < PATCHES_DOWN; y++) {
+                this.idxesToRedraw.addLast(y * PATCHES_ACROSS);
+            }
+        }
+        if (this.patchOffsetY < 0) {
+            this.patchLookup.shift(0, -1);
+            for (int x = 0; x < PATCHES_ACROSS; x++) {
+                this.idxesToRedraw.addLast((PATCHES_DOWN - 1) * PATCHES_ACROSS + x);
+            }
+        } else if (this.patchOffsetY >= PATCH_SIZE) {
+            this.patchLookup.shift(0, 1);
+            for (int x = 0; x < PATCHES_ACROSS; x++) {
+                this.idxesToRedraw.addLast(PATCHES_ACROSS + x);
+            }
+        }
+
+        this.patchOffsetX %= PATCH_SIZE;
+        this.patchOffsetY %= PATCH_SIZE;
+
+        if (!this.idxesToRedraw.isEmpty()) {
+            var idx = this.idxesToRedraw.removeFirst();
+            var tex = this.patchLookup.getName(idx);
+        }
+    }
+
+    @Override
     public void mouseMoved(double pMouseX, double pMouseY) {
         this.mapWidget.mouseMoved(pMouseX, pMouseY);
     }
@@ -103,8 +171,8 @@ public class GuiWorldMap extends Screen {
     }
 
     private void blitTexture() {
-        var centerPos = new BlockPos(Math.round(this.centerPos.x), player.getBlockY() + 1,
-            Math.round(this.centerPos.y));
+        var centerPos = new BlockPos(Math.round(this.patchOffset.x), player.getBlockY() + 1,
+            Math.round(this.patchOffset.y));
         MapHelper.blitMapToTexture(this.player, centerPos, true, WORLD_MAP);
     }
 
@@ -126,14 +194,14 @@ public class GuiWorldMap extends Screen {
         @Override
         public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
             mouseAnchor = new Vec2((float) pMouseX, (float) pMouseY);
-            posAnchor = GuiWorldMap.this.centerPos;
+            posAnchor = GuiWorldMap.this.patchOffset;
             return true;
         }
 
         @Override
         public void mouseMoved(double pMouseX, double pMouseY) {
             if (this.mouseAnchor != null && this.posAnchor != null) {
-                centerPos = posAnchor.add(new Vec2(mouseAnchor.x - (float) pMouseX, mouseAnchor.y - (float) pMouseY));
+                patchOffset = posAnchor.add(new Vec2(mouseAnchor.x - (float) pMouseX, mouseAnchor.y - (float) pMouseY));
                 blitTexture();
             }
         }
@@ -169,8 +237,8 @@ public class GuiWorldMap extends Screen {
 
             for (var pair : markerLocations) {
                 var pos = pair.getFirst();
-                var dx = pos.getX() - centerPos.x;
-                var dy = pos.getZ() - centerPos.y;
+                var dx = pos.getX() - patchOffset.x;
+                var dy = pos.getZ() - patchOffset.y;
                 if (Mth.abs(dx) < MAP_BLOCK_WIDTH / 2f && Mth.abs(dy) < MAP_BLOCK_HEIGHT / 2f) {
                     ps.pushPose();
 
@@ -216,8 +284,8 @@ public class GuiWorldMap extends Screen {
             ps.pushPose();
             ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
             ps.translate(
-                (player.getX() - centerPos.x) / BLOCKS_TO_PIXELS,
-                (player.getZ() - centerPos.y) / BLOCKS_TO_PIXELS,
+                (player.getX() - patchOffset.x) / BLOCKS_TO_PIXELS,
+                (player.getZ() - patchOffset.y) / BLOCKS_TO_PIXELS,
                 0);
             ps.mulPose(Quaternion.fromXYZ(0f, 0f, Mth.PI + player.getYRot() / 180f * 3.14159f));
             ps.translate(-5f / 4f, -7f / 4f, 0f);
@@ -254,6 +322,23 @@ public class GuiWorldMap extends Screen {
                     new TranslatableComponent(SimpleMapMod.MOD_ID + ".message.fail_open_map"),
                     true);
             }
+        }
+    }
+
+    private static class PatchLookup {
+        private int xOff = 0, yOff = 0;
+
+        public ResourceLocation getName(int x, int y) {
+            var idx = (y - yOff) * PATCHES_ACROSS * (x - xOff);
+            return new ResourceLocation(TEX_WORLD_MAP_STUB + idx);
+        }
+
+        /**
+         * Shift the *view rect*
+         */
+        public void shift(int dx, int dy) {
+            this.xOff -= dx;
+            this.yOff -= dy;
         }
     }
 }
