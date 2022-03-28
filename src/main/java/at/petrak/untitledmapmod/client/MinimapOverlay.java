@@ -55,7 +55,7 @@ public class MinimapOverlay {
 
 
         var oldShader = RenderSystem.getShader();
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
 
         // Draw snek bg
         ps.pushPose();

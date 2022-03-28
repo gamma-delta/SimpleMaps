@@ -32,10 +32,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class GuiWorldMap extends Screen {
     private static final float BLOCKS_TO_PIXELS = 2f;
@@ -57,6 +54,8 @@ public class GuiWorldMap extends Screen {
     private static final String TEX_WORLD_MAP_STUB = SimpleMapMod.MOD_ID + ":world_map/";
     private static final ResourceLocation TEX_BORDER = new ResourceLocation(SimpleMapMod.MOD_ID,
         "textures/gui/border.png");
+
+    private static final int FADE_IN_TIME = 20;
 
 
     public static void initTextures() {
@@ -89,6 +88,8 @@ public class GuiWorldMap extends Screen {
     private MapWidget mapWidget;
 
     private Set<Integer> idxesToRedraw = new HashSet<>();
+    // maps fake indices to ticks the patch has left to full opacity
+    private Map<Integer, Integer> idxesFadingIn = new HashMap<>();
 
     public GuiWorldMap(LocalPlayer player) {
         super(new TextComponent(""));
@@ -161,18 +162,32 @@ public class GuiWorldMap extends Screen {
         oldPatchOffsetX = patchOffsetX;
         oldPatchOffsetY = patchOffsetY;
 
+        var keys = new ArrayList<>(this.idxesFadingIn.keySet());
+        for (var screenIdx : keys) {
+            var timeLeft = this.idxesFadingIn.get(screenIdx);
+            if (timeLeft == null) {
+                // uh oh
+                break;
+            }
+            if (timeLeft <= 0) {
+                this.idxesFadingIn.remove(screenIdx);
+            } else {
+                this.idxesFadingIn.put(screenIdx, timeLeft - 1);
+            }
+        }
+
         if (!this.idxesToRedraw.isEmpty()) {
             var screenIdx = this.idxesToRedraw.stream().findAny().get();
             this.idxesToRedraw.remove(screenIdx);
-
+            this.idxesFadingIn.put(screenIdx, FADE_IN_TIME);
 
             var patchX = screenIdx % PATCHES_ACROSS;
             var patchY = screenIdx / PATCHES_ACROSS;
             var realIdx = getPatchIdx(patchX, patchY);
-            // var tex = PATCHES[realIdx];
-            // var blockX = playerStartPos.getX() - patchX * PATCH_SIZE - MAP_BLOCK_WIDTH / 2;
-            // var blockZ = playerStartPos.getZ() - patchY * PATCH_SIZE - MAP_BLOCK_HEIGHT / 2;
-            // MapHelper.blitMapToTexture(this.player, new BlockPos(blockX, playerStartPos.getY(), blockZ), true, tex);
+            var tex = PATCHES[realIdx];
+            var blockX = playerStartPos.getX() + ((int) patchOffsetX / PATCH_SIZE + patchX) * PATCH_SIZE - MAP_BLOCK_WIDTH / 2;
+            var blockZ = playerStartPos.getZ() + ((int) patchOffsetY / PATCH_SIZE + patchY) * PATCH_SIZE - MAP_BLOCK_HEIGHT / 2;
+            MapHelper.blitMapToTexture(this.player, new BlockPos(blockX, playerStartPos.getY(), blockZ), true, tex);
             SimpleMapMod.LOGGER.info("redrew at screen-idx {}, real-idx {}", screenIdx, realIdx);
         }
     }
@@ -227,7 +242,8 @@ public class GuiWorldMap extends Screen {
 
         @Override
         public void render(PoseStack ps, int pMouseX, int pMouseY, float pPartialTick) {
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+            RenderSystem.enableBlend();
             ps.translate(x, y, 0);
 
             ps.pushPose();
@@ -240,12 +256,20 @@ public class GuiWorldMap extends Screen {
             ps.scale(1 / BLOCKS_TO_PIXELS, 1 / BLOCKS_TO_PIXELS, 1);
             for (int x = 0; x < PATCHES_ACROSS; x++) {
                 for (int y = 0; y < PATCHES_DOWN; y++) {
+                    var screenIdx = y * PATCHES_ACROSS + x;
+                    var opacity = 1f;
+                    if (idxesToRedraw.contains(screenIdx)) {
+                        continue;
+                    } else if (idxesFadingIn.containsKey(screenIdx)) {
+                        opacity = 1f - (float) idxesFadingIn.get(screenIdx) / FADE_IN_TIME;
+                    }
+                    var color = FastColor.ARGB32.color((int) (opacity * 255f), 255, 255, 255);
                     ps.pushPose();
                     ps.translate(
-                        (x - 1) * PATCH_SIZE - Mth.positiveModulo(patchOffsetX, PATCH_SIZE),
-                        (y - 1) * PATCH_SIZE - Mth.positiveModulo(patchOffsetY, PATCH_SIZE),
+                        (x - 1) * PATCH_SIZE - (int) Mth.positiveModulo(patchOffsetX, PATCH_SIZE),
+                        (y - 1) * PATCH_SIZE - (int) Mth.positiveModulo(patchOffsetY, PATCH_SIZE),
                         0);
-                    MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, getPatchIdxName(x, y));
+                    MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, color, getPatchIdxName(x, y));
                     ps.popPose();
                 }
             }
@@ -255,7 +279,6 @@ public class GuiWorldMap extends Screen {
             ps.translate(0, 0, 1);
             ps.pushPose();
             ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
-            RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
             RenderSystem.setShaderTexture(0, MapHelper.TEX_MAP_DECO);
 
             for (var pair : markerLocations) {
@@ -302,13 +325,13 @@ public class GuiWorldMap extends Screen {
             ps.popPose();
 
             // Player icon
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
             ps.translate(0, 0, 1);
             ps.pushPose();
             ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
             ps.translate(
-                patchOffsetX / BLOCKS_TO_PIXELS,
-                patchOffsetY / BLOCKS_TO_PIXELS,
+                (int) -patchOffsetX,
+                (int) -patchOffsetY,
                 0);
             ps.mulPose(Quaternion.fromXYZ(0f, 0f, Mth.PI + player.getYRot() / 180f * 3.14159f));
             ps.translate(-5f / 4f, -7f / 4f, 0f);

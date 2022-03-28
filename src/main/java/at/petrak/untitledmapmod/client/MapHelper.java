@@ -104,28 +104,40 @@ public class MapHelper {
     }
 
     /**
-     * Make sure you have the `PositionTexShader` set
+     * Make sure you have the `PositionTexColorShader` set
      */
     public static void renderQuad(PoseStack ps, float width, float height, float u, float v, float uw, float vh,
         ResourceLocation tex) {
+        renderQuad(ps, width, height, u, v, uw, vh, 0xffffffff, tex);
+    }
+
+    /**
+     * Make sure you have the `PositionTexColorShader` set
+     */
+    public static void renderQuad(PoseStack ps, float width, float height, float u, float v, float uw, float vh,
+        int color, ResourceLocation tex) {
         var mat = ps.last().pose();
         var tess = Tesselator.getInstance();
         var buf = tess.getBuilder();
 
         RenderSystem.setShaderTexture(0, tex);
 
-        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
         buf.vertex(mat, 0, 0, 0)
             .uv(u, v)
+            .color(color)
             .endVertex();
         buf.vertex(mat, 0, height, 0)
             .uv(u, v + vh)
+            .color(color)
             .endVertex();
         buf.vertex(mat, width, height, 0)
             .uv(u + uw, v + vh)
+            .color(color)
             .endVertex();
         buf.vertex(mat, width, 0, 0)
             .uv(u + uw, v)
+            .color(color)
             .endVertex();
         tess.end();
     }
