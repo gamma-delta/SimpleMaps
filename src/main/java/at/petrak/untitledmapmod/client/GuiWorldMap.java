@@ -40,15 +40,17 @@ import java.util.List;
 public class GuiWorldMap extends Screen {
     private static final float BLOCKS_TO_PIXELS = 2f;
 
+    // *Render pixel* size of the map
     private static final int MAP_WIDTH = 192;
     private static final int MAP_HEIGHT = 108;
 
+    // Actual number of pixels on the map
     private static final int MAP_BLOCK_WIDTH = (int) (MAP_WIDTH * BLOCKS_TO_PIXELS);
     private static final int MAP_BLOCK_HEIGHT = (int) (MAP_HEIGHT * BLOCKS_TO_PIXELS);
 
     private static final int PATCH_SIZE = 64;
-    private static final int PATCHES_ACROSS = MAP_WIDTH / PATCH_SIZE + 2;
-    private static final int PATCHES_DOWN = MAP_HEIGHT / PATCH_SIZE + 2;
+    private static final int PATCHES_ACROSS = MAP_BLOCK_WIDTH / PATCH_SIZE + 2;
+    private static final int PATCHES_DOWN = MAP_BLOCK_WIDTH / PATCH_SIZE + 2;
 
     private static DynamicTexture[] PATCHES = new DynamicTexture[PATCHES_ACROSS * PATCHES_DOWN];
 
@@ -60,14 +62,16 @@ public class GuiWorldMap extends Screen {
     public static void initTextures() {
         var tm = Minecraft.getInstance().textureManager;
 
-        for (int y = 0; y < PATCHES_ACROSS; y++) {
-            for (int x = 0; x < PATCHES_DOWN; x++) {
+        for (int y = 0; y < PATCHES_DOWN; y++) {
+            for (int x = 0; x < PATCHES_ACROSS; x++) {
                 int idx = y * PATCHES_ACROSS + x;
                 var tex = PATCHES[idx] = new DynamicTexture(PATCH_SIZE, PATCH_SIZE, true);
                 // Tmp
                 tex.getPixels()
-                    .fillRect(0, 0, PATCHES_ACROSS, PATCHES_DOWN, FastColor.ARGB32.color(255, x * 25, y * 25, 0));
+                    .fillRect(0, 0, PATCH_SIZE, PATCH_SIZE, FastColor.ARGB32.color(255, 255 - x * 25, 255 - y * 25, 0));
+                tex.upload();
                 var name = new ResourceLocation(TEX_WORLD_MAP_STUB + idx);
+                SimpleMapMod.LOGGER.info("registering texture {}", name);
                 tm.register(name, tex);
             }
         }
@@ -82,7 +86,6 @@ public class GuiWorldMap extends Screen {
 
     private MapWidget mapWidget;
 
-    private PatchLookup patchLookup = new PatchLookup();
     private Deque<Integer> idxesToRedraw = new ArrayDeque<>();
 
     public GuiWorldMap(LocalPlayer player) {
@@ -93,8 +96,8 @@ public class GuiWorldMap extends Screen {
         this.markerLocations = new ArrayList<>();
 
         // Start with the identity mapping.
-        for (int y = 0; y < PATCHES_ACROSS; y++) {
-            for (int x = 0; x < PATCHES_DOWN; x++) {
+        for (int y = 0; y < PATCHES_DOWN; y++) {
+            for (int x = 0; x < PATCHES_ACROSS; x++) {
                 int idx = y * PATCHES_ACROSS + x;
                 this.idxesToRedraw.add(idx);
             }
@@ -113,10 +116,15 @@ public class GuiWorldMap extends Screen {
         SimpleMapMod.LOGGER.info("got: {}", this.markerLocations);
     }
 
+    private ResourceLocation getPatchIdx(int x, int y) {
+        var xOff = Mth.positiveModulo(this.patchOffsetX, PATCH_SIZE);
+        var yOff = Mth.positiveModulo(this.patchOffsetY, PATCH_SIZE);
+        var idx = (y - yOff) * PATCHES_ACROSS * (x - xOff);
+        return new ResourceLocation(TEX_WORLD_MAP_STUB + (int) idx);
+    }
+
     @Override
     protected void init() {
-        this.blitTexture();
-
         this.addRenderableWidget(this.mapWidget =
             new MapWidget(width / 2f - MAP_WIDTH / 2f, height / 2f - MAP_HEIGHT / 2f));
 
@@ -125,37 +133,9 @@ public class GuiWorldMap extends Screen {
 
     @Override
     public void tick() {
-        if (this.patchOffsetX < 0) {
-            this.patchLookup.shift(-1, 0);
-            // and redraw the ones that have fallen off the right
-            for (int y = 0; y < PATCHES_DOWN; y++) {
-                this.idxesToRedraw.addLast(y * PATCHES_ACROSS + PATCHES_ACROSS - 1);
-            }
-
-        } else if (this.patchOffsetX >= PATCH_SIZE) {
-            this.patchLookup.shift(1, 0);
-            for (int y = 0; y < PATCHES_DOWN; y++) {
-                this.idxesToRedraw.addLast(y * PATCHES_ACROSS);
-            }
-        }
-        if (this.patchOffsetY < 0) {
-            this.patchLookup.shift(0, -1);
-            for (int x = 0; x < PATCHES_ACROSS; x++) {
-                this.idxesToRedraw.addLast((PATCHES_DOWN - 1) * PATCHES_ACROSS + x);
-            }
-        } else if (this.patchOffsetY >= PATCH_SIZE) {
-            this.patchLookup.shift(0, 1);
-            for (int x = 0; x < PATCHES_ACROSS; x++) {
-                this.idxesToRedraw.addLast(PATCHES_ACROSS + x);
-            }
-        }
-
-        this.patchOffsetX %= PATCH_SIZE;
-        this.patchOffsetY %= PATCH_SIZE;
-
         if (!this.idxesToRedraw.isEmpty()) {
             var idx = this.idxesToRedraw.removeFirst();
-            var tex = this.patchLookup.getName(idx);
+            // SimpleMapMod.LOGGER.info("'redrawing' {}", idx);
         }
     }
 
@@ -168,12 +148,6 @@ public class GuiWorldMap extends Screen {
     public boolean mouseReleased(double pMouseX, double pMouseY, int pButton) {
         this.mapWidget.mouseAnchor = null;
         return super.mouseReleased(pMouseX, pMouseY, pButton);
-    }
-
-    private void blitTexture() {
-        var centerPos = new BlockPos(Math.round(this.patchOffset.x), player.getBlockY() + 1,
-            Math.round(this.patchOffset.y));
-        MapHelper.blitMapToTexture(this.player, centerPos, true, WORLD_MAP);
     }
 
     private class MapWidget implements Widget, GuiEventListener, NarratableEntry {
@@ -194,15 +168,15 @@ public class GuiWorldMap extends Screen {
         @Override
         public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
             mouseAnchor = new Vec2((float) pMouseX, (float) pMouseY);
-            posAnchor = GuiWorldMap.this.patchOffset;
+            posAnchor = new Vec2(patchOffsetX, patchOffsetY);
             return true;
         }
 
         @Override
         public void mouseMoved(double pMouseX, double pMouseY) {
             if (this.mouseAnchor != null && this.posAnchor != null) {
-                patchOffset = posAnchor.add(new Vec2(mouseAnchor.x - (float) pMouseX, mouseAnchor.y - (float) pMouseY));
-                blitTexture();
+                patchOffsetX = posAnchor.x + (float) pMouseX - mouseAnchor.x;
+                patchOffsetY = posAnchor.y + (float) pMouseY - mouseAnchor.y;
             }
         }
 
@@ -225,7 +199,15 @@ public class GuiWorldMap extends Screen {
 
             ps.translate(0, 0, 1);
             ps.pushPose();
-            MapHelper.renderQuad(ps, MAP_WIDTH, MAP_HEIGHT, 0f, 0, 1, 1, TEX_WORLD_MAP);
+            ps.scale(1 / BLOCKS_TO_PIXELS, 1 / BLOCKS_TO_PIXELS, 1);
+            for (int x = 0; x < PATCHES_ACROSS; x++) {
+                for (int y = 0; y < PATCHES_DOWN; y++) {
+                    ps.pushPose();
+                    ps.translate((x - 1) * PATCH_SIZE - patchOffsetX, (y - 1) * PATCH_SIZE - patchOffsetY, 0);
+                    MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, getPatchIdx(x, y));
+                    ps.popPose();
+                }
+            }
             ps.popPose();
 
             // Markers
@@ -237,8 +219,8 @@ public class GuiWorldMap extends Screen {
 
             for (var pair : markerLocations) {
                 var pos = pair.getFirst();
-                var dx = pos.getX() - patchOffset.x;
-                var dy = pos.getZ() - patchOffset.y;
+                var dx = pos.getX() - patchOffsetX;
+                var dy = pos.getZ() - patchOffsetY;
                 if (Mth.abs(dx) < MAP_BLOCK_WIDTH / 2f && Mth.abs(dy) < MAP_BLOCK_HEIGHT / 2f) {
                     ps.pushPose();
 
@@ -284,8 +266,8 @@ public class GuiWorldMap extends Screen {
             ps.pushPose();
             ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
             ps.translate(
-                (player.getX() - patchOffset.x) / BLOCKS_TO_PIXELS,
-                (player.getZ() - patchOffset.y) / BLOCKS_TO_PIXELS,
+                (player.getX() - patchOffsetX) / BLOCKS_TO_PIXELS,
+                (player.getZ() - patchOffsetY) / BLOCKS_TO_PIXELS,
                 0);
             ps.mulPose(Quaternion.fromXYZ(0f, 0f, Mth.PI + player.getYRot() / 180f * 3.14159f));
             ps.translate(-5f / 4f, -7f / 4f, 0f);
@@ -325,20 +307,7 @@ public class GuiWorldMap extends Screen {
         }
     }
 
-    private static class PatchLookup {
-        private int xOff = 0, yOff = 0;
-
-        public ResourceLocation getName(int x, int y) {
-            var idx = (y - yOff) * PATCHES_ACROSS * (x - xOff);
-            return new ResourceLocation(TEX_WORLD_MAP_STUB + idx);
-        }
-
-        /**
-         * Shift the *view rect*
-         */
-        public void shift(int dx, int dy) {
-            this.xOff -= dx;
-            this.yOff -= dy;
-        }
+    private static int mod(int num, int dem) {
+        return (num % dem + dem) % dem;
     }
 }
