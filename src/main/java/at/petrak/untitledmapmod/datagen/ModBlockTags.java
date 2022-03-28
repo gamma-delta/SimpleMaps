@@ -17,7 +17,7 @@ public class ModBlockTags extends BlockTagsProvider {
     @Override
     protected void addTags() {
         for (var blockRobj : ModBlocks.MARKERS) {
-            this.m_206424_(BlockTags.MINEABLE_WITH_PICKAXE).add(blockRobj.get());
+            this.tag(BlockTags.MINEABLE_WITH_PICKAXE).add(blockRobj.get());
         }
     }
 }

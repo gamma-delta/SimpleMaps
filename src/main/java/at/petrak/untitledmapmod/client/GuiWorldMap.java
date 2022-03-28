@@ -32,10 +32,10 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GuiWorldMap extends Screen {
     private static final float BLOCKS_TO_PIXELS = 2f;
@@ -49,8 +49,8 @@ public class GuiWorldMap extends Screen {
     private static final int MAP_BLOCK_HEIGHT = (int) (MAP_HEIGHT * BLOCKS_TO_PIXELS);
 
     private static final int PATCH_SIZE = 64;
-    private static final int PATCHES_ACROSS = MAP_BLOCK_WIDTH / PATCH_SIZE + 2;
-    private static final int PATCHES_DOWN = MAP_BLOCK_WIDTH / PATCH_SIZE + 2;
+    private static final int PATCHES_ACROSS = MAP_BLOCK_WIDTH / PATCH_SIZE + 3;
+    private static final int PATCHES_DOWN = MAP_BLOCK_HEIGHT / PATCH_SIZE + 3;
 
     private static DynamicTexture[] PATCHES = new DynamicTexture[PATCHES_ACROSS * PATCHES_DOWN];
 
@@ -80,18 +80,20 @@ public class GuiWorldMap extends Screen {
     // Pixel distance from the upper-left corner of patch (1, 1) to the upper-left corner of the visible rect.
     private float patchOffsetX = 0;
     private float patchOffsetY = 0;
-    private final BlockPos playerPos;
+    private float oldPatchOffsetX = 0;
+    private float oldPatchOffsetY = 0;
+    private final BlockPos playerStartPos;
     private final LocalPlayer player;
     private List<Pair<BlockPos, DyeColor>> markerLocations;
 
     private MapWidget mapWidget;
 
-    private Deque<Integer> idxesToRedraw = new ArrayDeque<>();
+    private Set<Integer> idxesToRedraw = new HashSet<>();
 
     public GuiWorldMap(LocalPlayer player) {
         super(new TextComponent(""));
 
-        this.playerPos = player.getOnPos();
+        this.playerStartPos = player.getOnPos();
         this.player = player;
         this.markerLocations = new ArrayList<>();
 
@@ -116,11 +118,14 @@ public class GuiWorldMap extends Screen {
         SimpleMapMod.LOGGER.info("got: {}", this.markerLocations);
     }
 
-    private ResourceLocation getPatchIdx(int x, int y) {
-        var xOff = Mth.positiveModulo(this.patchOffsetX, PATCH_SIZE);
-        var yOff = Mth.positiveModulo(this.patchOffsetY, PATCH_SIZE);
-        var idx = (y - yOff) * PATCHES_ACROSS * (x - xOff);
-        return new ResourceLocation(TEX_WORLD_MAP_STUB + (int) idx);
+    private ResourceLocation getPatchIdxName(int x, int y) {
+        return new ResourceLocation(TEX_WORLD_MAP_STUB + getPatchIdx(x, y));
+    }
+
+    private int getPatchIdx(int x, int y) {
+        var xOff = (int) this.patchOffsetX / PATCH_SIZE;
+        var yOff = (int) this.patchOffsetY / PATCH_SIZE;
+        return mod(y + yOff, PATCHES_DOWN) * PATCHES_ACROSS + mod(x + xOff, PATCHES_ACROSS);
     }
 
     @Override
@@ -133,9 +138,42 @@ public class GuiWorldMap extends Screen {
 
     @Override
     public void tick() {
+        var deltaX = patchOffsetX - oldPatchOffsetX;
+        var deltaY = patchOffsetY - oldPatchOffsetY;
+
+        if ((int) patchOffsetX / PATCH_SIZE != (int) oldPatchOffsetX / PATCH_SIZE) {
+            // we crossed an x boundary!
+            // if the delta is negative, the patches on the right cycled to the left, so we want to redraw them
+            // along the leftmost index.
+            // And if we shifted to the right vice versa.
+            var xOffset = deltaX < 0 ? 0 : PATCHES_ACROSS - 1;
+            for (int y = 0; y < PATCHES_DOWN; y++) {
+                this.idxesToRedraw.add(y * PATCHES_ACROSS + xOffset);
+            }
+        }
+        if ((int) patchOffsetY / PATCH_SIZE != (int) oldPatchOffsetY / PATCH_SIZE) {
+            var yOffset = deltaY < 0 ? 0 : PATCHES_DOWN - 1;
+            for (int x = 0; x < PATCHES_ACROSS; x++) {
+                this.idxesToRedraw.add(yOffset * PATCHES_ACROSS + x);
+            }
+        }
+
+        oldPatchOffsetX = patchOffsetX;
+        oldPatchOffsetY = patchOffsetY;
+
         if (!this.idxesToRedraw.isEmpty()) {
-            var idx = this.idxesToRedraw.removeFirst();
-            // SimpleMapMod.LOGGER.info("'redrawing' {}", idx);
+            var screenIdx = this.idxesToRedraw.stream().findAny().get();
+            this.idxesToRedraw.remove(screenIdx);
+
+
+            var patchX = screenIdx % PATCHES_ACROSS;
+            var patchY = screenIdx / PATCHES_ACROSS;
+            var realIdx = getPatchIdx(patchX, patchY);
+            // var tex = PATCHES[realIdx];
+            // var blockX = playerStartPos.getX() - patchX * PATCH_SIZE - MAP_BLOCK_WIDTH / 2;
+            // var blockZ = playerStartPos.getZ() - patchY * PATCH_SIZE - MAP_BLOCK_HEIGHT / 2;
+            // MapHelper.blitMapToTexture(this.player, new BlockPos(blockX, playerStartPos.getY(), blockZ), true, tex);
+            SimpleMapMod.LOGGER.info("redrew at screen-idx {}, real-idx {}", screenIdx, realIdx);
         }
     }
 
@@ -175,8 +213,8 @@ public class GuiWorldMap extends Screen {
         @Override
         public void mouseMoved(double pMouseX, double pMouseY) {
             if (this.mouseAnchor != null && this.posAnchor != null) {
-                patchOffsetX = posAnchor.x + (float) pMouseX - mouseAnchor.x;
-                patchOffsetY = posAnchor.y + (float) pMouseY - mouseAnchor.y;
+                patchOffsetX = posAnchor.x + mouseAnchor.x - (float) pMouseX;
+                patchOffsetY = posAnchor.y + mouseAnchor.y - (float) pMouseY;
             }
         }
 
@@ -203,8 +241,11 @@ public class GuiWorldMap extends Screen {
             for (int x = 0; x < PATCHES_ACROSS; x++) {
                 for (int y = 0; y < PATCHES_DOWN; y++) {
                     ps.pushPose();
-                    ps.translate((x - 1) * PATCH_SIZE - patchOffsetX, (y - 1) * PATCH_SIZE - patchOffsetY, 0);
-                    MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, getPatchIdx(x, y));
+                    ps.translate(
+                        (x - 1) * PATCH_SIZE - Mth.positiveModulo(patchOffsetX, PATCH_SIZE),
+                        (y - 1) * PATCH_SIZE - Mth.positiveModulo(patchOffsetY, PATCH_SIZE),
+                        0);
+                    MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, getPatchIdxName(x, y));
                     ps.popPose();
                 }
             }
@@ -219,8 +260,8 @@ public class GuiWorldMap extends Screen {
 
             for (var pair : markerLocations) {
                 var pos = pair.getFirst();
-                var dx = pos.getX() - patchOffsetX;
-                var dy = pos.getZ() - patchOffsetY;
+                var dx = pos.getX() - playerStartPos.getX();
+                var dy = pos.getZ() - playerStartPos.getZ();
                 if (Mth.abs(dx) < MAP_BLOCK_WIDTH / 2f && Mth.abs(dy) < MAP_BLOCK_HEIGHT / 2f) {
                     ps.pushPose();
 
@@ -266,8 +307,8 @@ public class GuiWorldMap extends Screen {
             ps.pushPose();
             ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
             ps.translate(
-                (player.getX() - patchOffsetX) / BLOCKS_TO_PIXELS,
-                (player.getZ() - patchOffsetY) / BLOCKS_TO_PIXELS,
+                patchOffsetX / BLOCKS_TO_PIXELS,
+                patchOffsetY / BLOCKS_TO_PIXELS,
                 0);
             ps.mulPose(Quaternion.fromXYZ(0f, 0f, Mth.PI + player.getYRot() / 180f * 3.14159f));
             ps.translate(-5f / 4f, -7f / 4f, 0f);
