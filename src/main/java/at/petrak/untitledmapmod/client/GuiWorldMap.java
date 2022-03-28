@@ -87,8 +87,9 @@ public class GuiWorldMap extends Screen {
 
     private MapWidget mapWidget;
 
+    // Set of REAL indices
     private Set<Integer> idxesToRedraw = new HashSet<>();
-    // maps fake indices to ticks the patch has left to full opacity
+    // maps real indices to ticks the patch has left to full opacity
     private Map<Integer, Integer> idxesFadingIn = new HashMap<>();
 
     public GuiWorldMap(LocalPlayer player) {
@@ -119,13 +120,9 @@ public class GuiWorldMap extends Screen {
         SimpleMapMod.LOGGER.info("got: {}", this.markerLocations);
     }
 
-    private ResourceLocation getPatchIdxName(int x, int y) {
-        return new ResourceLocation(TEX_WORLD_MAP_STUB + getPatchIdx(x, y));
-    }
-
     private int getPatchIdx(int x, int y) {
-        var xOff = (int) this.patchOffsetX / PATCH_SIZE;
-        var yOff = (int) this.patchOffsetY / PATCH_SIZE;
+        var xOff = div((int) this.patchOffsetX, PATCH_SIZE);
+        var yOff = div((int) this.patchOffsetY, PATCH_SIZE);
         return mod(y + yOff, PATCHES_DOWN) * PATCHES_ACROSS + mod(x + xOff, PATCHES_ACROSS);
     }
 
@@ -142,20 +139,20 @@ public class GuiWorldMap extends Screen {
         var deltaX = patchOffsetX - oldPatchOffsetX;
         var deltaY = patchOffsetY - oldPatchOffsetY;
 
-        if ((int) patchOffsetX / PATCH_SIZE != (int) oldPatchOffsetX / PATCH_SIZE) {
+        if (div((int) patchOffsetX, PATCH_SIZE) != div((int) oldPatchOffsetX, PATCH_SIZE)) {
             // we crossed an x boundary!
             // if the delta is negative, the patches on the right cycled to the left, so we want to redraw them
             // along the leftmost index.
             // And if we shifted to the right vice versa.
-            var xOffset = deltaX < 0 ? 0 : PATCHES_ACROSS - 1;
+            var x = deltaX < 0 ? 0 : PATCHES_ACROSS - 1;
             for (int y = 0; y < PATCHES_DOWN; y++) {
-                this.idxesToRedraw.add(y * PATCHES_ACROSS + xOffset);
+                this.idxesToRedraw.add(getPatchIdx(x, y));
             }
         }
-        if ((int) patchOffsetY / PATCH_SIZE != (int) oldPatchOffsetY / PATCH_SIZE) {
-            var yOffset = deltaY < 0 ? 0 : PATCHES_DOWN - 1;
+        if (div((int) patchOffsetX, PATCH_SIZE) != div((int) oldPatchOffsetY, PATCH_SIZE)) {
+            var y = deltaY < 0 ? 0 : PATCHES_DOWN - 1;
             for (int x = 0; x < PATCHES_ACROSS; x++) {
-                this.idxesToRedraw.add(yOffset * PATCHES_ACROSS + x);
+                this.idxesToRedraw.add(getPatchIdx(x, y));
             }
         }
 
@@ -177,18 +174,17 @@ public class GuiWorldMap extends Screen {
         }
 
         if (!this.idxesToRedraw.isEmpty()) {
-            var screenIdx = this.idxesToRedraw.stream().findAny().get();
-            this.idxesToRedraw.remove(screenIdx);
-            this.idxesFadingIn.put(screenIdx, FADE_IN_TIME);
+            var realIdx = this.idxesToRedraw.stream().findAny().get();
+            this.idxesToRedraw.remove(realIdx);
+            this.idxesFadingIn.put(realIdx, FADE_IN_TIME);
 
-            var patchX = screenIdx % PATCHES_ACROSS;
-            var patchY = screenIdx / PATCHES_ACROSS;
-            var realIdx = getPatchIdx(patchX, patchY);
+            var patchX = realIdx % PATCHES_ACROSS;
+            var patchY = realIdx / PATCHES_ACROSS;
             var tex = PATCHES[realIdx];
             var blockX = playerStartPos.getX() + ((int) patchOffsetX / PATCH_SIZE + patchX) * PATCH_SIZE - MAP_BLOCK_WIDTH / 2;
             var blockZ = playerStartPos.getZ() + ((int) patchOffsetY / PATCH_SIZE + patchY) * PATCH_SIZE - MAP_BLOCK_HEIGHT / 2;
             MapHelper.blitMapToTexture(this.player, new BlockPos(blockX, playerStartPos.getY(), blockZ), true, tex);
-            SimpleMapMod.LOGGER.info("redrew at screen-idx {}, real-idx {}", screenIdx, realIdx);
+            SimpleMapMod.LOGGER.info("redrew at real-idx {}", realIdx);
         }
     }
 
@@ -256,20 +252,22 @@ public class GuiWorldMap extends Screen {
             ps.scale(1 / BLOCKS_TO_PIXELS, 1 / BLOCKS_TO_PIXELS, 1);
             for (int x = 0; x < PATCHES_ACROSS; x++) {
                 for (int y = 0; y < PATCHES_DOWN; y++) {
-                    var screenIdx = y * PATCHES_ACROSS + x;
+                    var realIdx = getPatchIdx(x, y);
                     var opacity = 1f;
-                    if (idxesToRedraw.contains(screenIdx)) {
+                    if (idxesToRedraw.contains(realIdx)) {
                         continue;
-                    } else if (idxesFadingIn.containsKey(screenIdx)) {
-                        opacity = 1f - (float) idxesFadingIn.get(screenIdx) / FADE_IN_TIME;
+                    } else if (idxesFadingIn.containsKey(realIdx)) {
+                        opacity = 1f - (float) idxesFadingIn.get(realIdx) / FADE_IN_TIME;
                     }
-                    var color = FastColor.ARGB32.color((int) (opacity * 255f), 255, 255, 255);
+                    int lightness = (int) (opacity * 255f);
+                    var color = FastColor.ARGB32.color(lightness, lightness, lightness, lightness);
                     ps.pushPose();
                     ps.translate(
                         (x - 1) * PATCH_SIZE - (int) Mth.positiveModulo(patchOffsetX, PATCH_SIZE),
                         (y - 1) * PATCH_SIZE - (int) Mth.positiveModulo(patchOffsetY, PATCH_SIZE),
                         0);
-                    MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, color, getPatchIdxName(x, y));
+                    MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, color,
+                        new ResourceLocation(TEX_WORLD_MAP_STUB + realIdx));
                     ps.popPose();
                 }
             }
@@ -330,8 +328,8 @@ public class GuiWorldMap extends Screen {
             ps.pushPose();
             ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
             ps.translate(
-                (int) -patchOffsetX,
-                (int) -patchOffsetY,
+                (int) -patchOffsetX / BLOCKS_TO_PIXELS,
+                (int) -patchOffsetY / BLOCKS_TO_PIXELS,
                 0);
             ps.mulPose(Quaternion.fromXYZ(0f, 0f, Mth.PI + player.getYRot() / 180f * 3.14159f));
             ps.translate(-5f / 4f, -7f / 4f, 0f);
@@ -373,5 +371,10 @@ public class GuiWorldMap extends Screen {
 
     private static int mod(int num, int dem) {
         return (num % dem + dem) % dem;
+    }
+
+    // Negative-aware div
+    private static int div(int num, int dem) {
+        return num / dem - (num < 0 ? 1 : 0);
     }
 }
