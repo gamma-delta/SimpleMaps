@@ -5,11 +5,9 @@ import at.petrak.untitledmapmod.common.advancement.AdvancementHelper;
 import at.petrak.untitledmapmod.common.blocks.BlockMarker;
 import at.petrak.untitledmapmod.common.network.ModMessages;
 import at.petrak.untitledmapmod.common.network.MsgMarkerLocsSyn;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Quaternion;
 import net.minecraft.client.Minecraft;
@@ -55,7 +53,7 @@ public class GuiWorldMap extends Screen {
     private static final ResourceLocation TEX_BORDER = new ResourceLocation(SimpleMapMod.MOD_ID,
         "textures/gui/border.png");
 
-    private static final int FADE_IN_TIME = 20;
+    private static final int FADE_IN_TIME = 10;
 
 
     public static void initTextures() {
@@ -181,7 +179,11 @@ public class GuiWorldMap extends Screen {
             }
         }
 
-        if (!this.idxesToRedraw.isEmpty()) {
+        for (int i = 0; i < 4; i++) {
+            if (this.idxesToRedraw.isEmpty()) {
+                break;
+            }
+
             var realIdx = this.idxesToRedraw.stream().findAny().get();
             this.idxesToRedraw.remove(realIdx);
             this.idxesFadingIn.put(realIdx, FADE_IN_TIME);
@@ -255,11 +257,24 @@ public class GuiWorldMap extends Screen {
             RenderSystem.enableBlend();
             ps.translate(x, y, 0);
 
+            // Draw the map background
             ps.pushPose();
             MapHelper.renderQuad(ps, MAP_WIDTH, MAP_HEIGHT, 0, 80f / 255f, MAP_WIDTH / 255f, MAP_HEIGHT / 255f,
                 MapHelper.TEX_MAP_MAIN);
             ps.popPose();
 
+            // Enable scissoring to avoid drawing things outside.
+            // From ScrollPanel.java
+            var scissorX = x - 8;
+            var scissorY = y - 8;
+            var scissorW = MAP_WIDTH + 8;
+            var scissorH = MAP_HEIGHT + 8;
+            Window window = Minecraft.getInstance().getWindow();
+            double scale = window.getGuiScale();
+            RenderSystem.enableScissor((int) (scissorX * scale), (int) (scissorY * scale),
+                (int) (scissorW * scale), (int) (scissorH * scale));
+
+            // Draw the patches
             ps.translate(0, 0, 1);
             ps.pushPose();
             ps.scale(1 / BLOCKS_TO_PIXELS, 1 / BLOCKS_TO_PIXELS, 1);
@@ -299,36 +314,14 @@ public class GuiWorldMap extends Screen {
                 if (Mth.abs(dx) < MAP_BLOCK_WIDTH / 2f && Mth.abs(dy) < MAP_BLOCK_HEIGHT / 2f) {
                     ps.pushPose();
 
-                    var px = dx / BLOCKS_TO_PIXELS;
-                    var py = dy / BLOCKS_TO_PIXELS;
+                    var px = (dx - patchOffsetX) / BLOCKS_TO_PIXELS;
+                    var py = (dy - patchOffsetY) / BLOCKS_TO_PIXELS;
                     ps.translate(px, py, 0);
                     ps.scale(1f / BLOCKS_TO_PIXELS, 1f / BLOCKS_TO_PIXELS, 1);
 
                     var color = pair.getSecond().getTextColor() | 0xff_000000;
 
-
-                    var mat = ps.last().pose();
-                    var tess = Tesselator.getInstance();
-                    var buf = tess.getBuilder();
-
-                    buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-                    buf.vertex(mat, 0, 0, 0)
-                        .color(color)
-                        .uv(8f / 16f, 0)
-                        .endVertex();
-                    buf.vertex(mat, 0, 4f, 0)
-                        .color(color)
-                        .uv(8f / 16f, 4f / 16f)
-                        .endVertex();
-                    buf.vertex(mat, 4f, 4f, 0)
-                        .color(color)
-                        .uv(12f / 16f, 4f / 16f)
-                        .endVertex();
-                    buf.vertex(mat, 4f, 0, 0)
-                        .color(color)
-                        .uv(12f / 16f, 0)
-                        .endVertex();
-                    tess.end();
+                    MapHelper.renderQuad(ps, 4f, 4f, 8f / 16f, 0f, 4f / 16f, 4f / 16f, color, MapHelper.TEX_MAP_DECO);
 
                     ps.popPose();
                 }
@@ -336,7 +329,6 @@ public class GuiWorldMap extends Screen {
             ps.popPose();
 
             // Player icon
-            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
             ps.translate(0, 0, 1);
             ps.pushPose();
             ps.translate(MAP_WIDTH / 2f, MAP_HEIGHT / 2f, 0);
@@ -350,6 +342,9 @@ public class GuiWorldMap extends Screen {
                 MapHelper.TEX_VANILLA_MAP_DECO);
             ps.popPose();
 
+            RenderSystem.disableScissor();
+
+            // Thick border
             ps.translate(0, 0, 1);
             ps.pushPose();
             ps.translate(-16, -16, 0);
