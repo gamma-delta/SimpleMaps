@@ -126,6 +126,14 @@ public class GuiWorldMap extends Screen {
         return mod(y + yOff, PATCHES_DOWN) * PATCHES_ACROSS + mod(x + xOff, PATCHES_ACROSS);
     }
 
+    private int reverseIdx(int realIdx) {
+        var realX = realIdx % PATCHES_ACROSS;
+        var realY = realIdx / PATCHES_ACROSS;
+        var xOff = div((int) this.patchOffsetX, PATCH_SIZE);
+        var yOff = div((int) this.patchOffsetY, PATCH_SIZE);
+        return mod(realY - yOff, PATCHES_DOWN) * PATCHES_ACROSS + mod(realX - xOff, PATCHES_ACROSS);
+    }
+
     @Override
     protected void init() {
         this.addRenderableWidget(this.mapWidget =
@@ -149,7 +157,7 @@ public class GuiWorldMap extends Screen {
                 this.idxesToRedraw.add(getPatchIdx(x, y));
             }
         }
-        if (div((int) patchOffsetX, PATCH_SIZE) != div((int) oldPatchOffsetY, PATCH_SIZE)) {
+        if (div((int) patchOffsetY, PATCH_SIZE) != div((int) oldPatchOffsetY, PATCH_SIZE)) {
             var y = deltaY < 0 ? 0 : PATCHES_DOWN - 1;
             for (int x = 0; x < PATCHES_ACROSS; x++) {
                 this.idxesToRedraw.add(getPatchIdx(x, y));
@@ -178,13 +186,18 @@ public class GuiWorldMap extends Screen {
             this.idxesToRedraw.remove(realIdx);
             this.idxesFadingIn.put(realIdx, FADE_IN_TIME);
 
-            var patchX = realIdx % PATCHES_ACROSS;
-            var patchY = realIdx / PATCHES_ACROSS;
+            var fakeIdx = this.reverseIdx(realIdx);
+            var patchX = fakeIdx % PATCHES_ACROSS;
+            var patchY = fakeIdx / PATCHES_ACROSS;
+            var blockX = playerStartPos.getX() +
+                (div((int) patchOffsetX, PATCH_SIZE) + patchX) * PATCH_SIZE
+                - MAP_BLOCK_WIDTH / 2;
+            var blockZ = playerStartPos.getZ() +
+                (div((int) patchOffsetY, PATCH_SIZE) + patchY) * PATCH_SIZE
+                - MAP_BLOCK_HEIGHT / 2;
             var tex = PATCHES[realIdx];
-            var blockX = playerStartPos.getX() + ((int) patchOffsetX / PATCH_SIZE + patchX) * PATCH_SIZE - MAP_BLOCK_WIDTH / 2;
-            var blockZ = playerStartPos.getZ() + ((int) patchOffsetY / PATCH_SIZE + patchY) * PATCH_SIZE - MAP_BLOCK_HEIGHT / 2;
             MapHelper.blitMapToTexture(this.player, new BlockPos(blockX, playerStartPos.getY(), blockZ), true, tex);
-            SimpleMapMod.LOGGER.info("redrew at real-idx {}", realIdx);
+            SimpleMapMod.LOGGER.info("redrew at real-idx {}, fake-idx {}", realIdx, fakeIdx);
         }
     }
 
