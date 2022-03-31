@@ -51,7 +51,8 @@ public class MinimapOverlay {
         var windowWidth = mc.getWindow().getGuiScaledWidth();
 
         ps.pushPose();
-        ps.translate(windowWidth - renderWidth - 10, 10, 0);
+        ps.translate(windowWidth - renderWidth * getExtraScale() - 10, 10, 0);
+        ps.scale(getExtraScale(), getExtraScale(), 1);
 
 
         var oldShader = RenderSystem.getShader();
@@ -153,5 +154,15 @@ public class MinimapOverlay {
         if (doRedraw) {
             MapHelper.blitMapToTexture(player, player.getOnPos().above(), false, MINIMAP);
         }
+    }
+
+    private static float getScale() {
+        var window = Minecraft.getInstance().getWindow();
+        return Math.max(5.0f, (float) window.getGuiScale());
+    }
+
+    private static float getExtraScale() {
+        var window = Minecraft.getInstance().getWindow();
+        return (float) (getScale() / window.getGuiScale());
     }
 }

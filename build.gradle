@@ -19,7 +19,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'org.spongepowered.mixin'
 
-version = '0.3.0'
+version = '0.3.1'
 group = 'at.petrak.simplemaps' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'simplemaps'
 
@@ -150,8 +150,8 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.18.2-40.0.19'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    compileOnly fg.deobf("curse.maven:paucal-597824:3712497")
-    runtimeOnly fg.deobf("curse.maven:paucal-597824:3712497")
+    compileOnly fg.deobf("curse.maven:paucal-597824:3724029")
+    runtimeOnly fg.deobf("curse.maven:paucal-597824:3724029")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.

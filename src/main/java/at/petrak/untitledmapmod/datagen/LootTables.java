@@ -15,6 +15,6 @@ public class LootTables extends PaucalLootTableProvider {
 
     @Override
     protected void makeLootTables(Map<Block, LootTable.Builder> map) {
-        dropSelfTable(map, ModBlocks.MARKERS);
+        dropSelf(map, ModBlocks.MARKERS);
     }
 }

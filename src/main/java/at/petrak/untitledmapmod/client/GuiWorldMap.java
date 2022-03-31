@@ -5,7 +5,6 @@ import at.petrak.untitledmapmod.common.advancement.AdvancementHelper;
 import at.petrak.untitledmapmod.common.blocks.BlockMarker;
 import at.petrak.untitledmapmod.common.network.ModMessages;
 import at.petrak.untitledmapmod.common.network.MsgMarkerLocsSyn;
-import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.datafixers.util.Pair;
@@ -30,6 +29,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
+import java.nio.FloatBuffer;
 import java.util.*;
 
 public class GuiWorldMap extends Screen {
@@ -63,12 +63,8 @@ public class GuiWorldMap extends Screen {
             for (int x = 0; x < PATCHES_ACROSS; x++) {
                 int idx = y * PATCHES_ACROSS + x;
                 var tex = PATCHES[idx] = new DynamicTexture(PATCH_SIZE, PATCH_SIZE, true);
-                // Tmp
-                tex.getPixels()
-                    .fillRect(0, 0, PATCH_SIZE, PATCH_SIZE, FastColor.ARGB32.color(255, 255 - x * 25, 255 - y * 25, 0));
                 tex.upload();
                 var name = new ResourceLocation(TEX_WORLD_MAP_STUB + idx);
-                SimpleMapMod.LOGGER.info("registering texture {}", name);
                 tm.register(name, tex);
             }
         }
@@ -135,7 +131,8 @@ public class GuiWorldMap extends Screen {
     @Override
     protected void init() {
         this.addRenderableWidget(this.mapWidget =
-            new MapWidget(width / 2f - MAP_WIDTH / 2f, height / 2f - MAP_HEIGHT / 2f));
+            new MapWidget(width / 2f - MAP_WIDTH / 2f * getExtraScale(),
+                height / 2f - MAP_HEIGHT / 2f * getExtraScale()));
 
         ModMessages.getNetwork().sendToServer(new MsgMarkerLocsSyn());
     }
@@ -199,7 +196,6 @@ public class GuiWorldMap extends Screen {
                 - MAP_BLOCK_HEIGHT / 2;
             var tex = PATCHES[realIdx];
             MapHelper.blitMapToTexture(this.player, new BlockPos(blockX, playerStartPos.getY(), blockZ), true, tex);
-            SimpleMapMod.LOGGER.info("redrew at real-idx {}, fake-idx {}", realIdx, fakeIdx);
         }
     }
 
@@ -226,7 +222,8 @@ public class GuiWorldMap extends Screen {
 
         @Override
         public boolean isMouseOver(double pMouseX, double pMouseY) {
-            return x < pMouseX && pMouseX < x + MAP_WIDTH && y < pMouseY && pMouseY < y + MAP_HEIGHT;
+            var extraScale = getExtraScale();
+            return x < pMouseX && pMouseX < x + MAP_WIDTH * extraScale && y < pMouseY && pMouseY < y + MAP_HEIGHT * extraScale;
         }
 
         @Override
@@ -257,6 +254,10 @@ public class GuiWorldMap extends Screen {
             RenderSystem.enableBlend();
             ps.translate(x, y, 0);
 
+            float scale = getScale();
+            float extraScale = getExtraScale();
+            ps.scale(extraScale, extraScale, 1);
+
             // Draw the map background
             ps.pushPose();
             MapHelper.renderQuad(ps, MAP_WIDTH, MAP_HEIGHT, 0, 80f / 255f, MAP_WIDTH / 255f, MAP_HEIGHT / 255f,
@@ -265,13 +266,13 @@ public class GuiWorldMap extends Screen {
 
             // Enable scissoring to avoid drawing things outside.
             // From ScrollPanel.java
-            var scissorX = x - 8;
-            var scissorY = y - 8;
+            var window = Minecraft.getInstance().getWindow();
+            var scissorX = window.getWidth() / 2 - MAP_WIDTH * scale / 2 - 8;
+            var scissorY = window.getHeight() / 2 - MAP_HEIGHT * scale / 2 - 8;
             var scissorW = MAP_WIDTH + 8;
             var scissorH = MAP_HEIGHT + 8;
-            Window window = Minecraft.getInstance().getWindow();
-            double scale = window.getGuiScale();
-            RenderSystem.enableScissor((int) (scissorX * scale), (int) (scissorY * scale),
+
+            RenderSystem.enableScissor((int) scissorX, (int) scissorY,
                 (int) (scissorW * scale), (int) (scissorH * scale));
 
             // Draw the patches
@@ -294,6 +295,15 @@ public class GuiWorldMap extends Screen {
                         (x - 1) * PATCH_SIZE - (int) Mth.positiveModulo(patchOffsetX, PATCH_SIZE),
                         (y - 1) * PATCH_SIZE - (int) Mth.positiveModulo(patchOffsetY, PATCH_SIZE),
                         0);
+
+                    // did you know this is the only way to get values out of a matrix4f
+                    var buf = FloatBuffer.allocate(16);
+                    ps.last().pose().store(buf);
+                    var arr = buf.array();
+                    var xRem = arr[12] - Mth.floor(arr[12]);
+                    var yRem = arr[13] - Mth.floor(arr[13]);
+                    ps.translate(-xRem, -yRem, 0);
+
                     MapHelper.renderQuad(ps, PATCH_SIZE, PATCH_SIZE, 0, 0, 1, 1, color,
                         new ResourceLocation(TEX_WORLD_MAP_STUB + realIdx));
                     ps.popPose();
@@ -384,5 +394,15 @@ public class GuiWorldMap extends Screen {
     // Negative-aware div
     private static int div(int num, int dem) {
         return num / dem - (num < 0 ? 1 : 0);
+    }
+
+    private static float getScale() {
+        var window = Minecraft.getInstance().getWindow();
+        return Math.max(5.0f, (float) window.getGuiScale());
+    }
+
+    private static float getExtraScale() {
+        var window = Minecraft.getInstance().getWindow();
+        return (float) (getScale() / window.getGuiScale());
     }
 }
