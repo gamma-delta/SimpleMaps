@@ -1,0 +1,32 @@
+{
+    "item.simplemaps.minimap": "Minimappa",
+    "item.simplemaps.world_map": "Mappa del mondo",
+    "block.simplemaps.marker_white": "Marcatore bianco",
+    "block.simplemaps.marker_orange": "Marcatore arancione",
+    "block.simplemaps.marker_magenta": "Marcatore magenta",
+    "block.simplemaps.marker_light_blue": "Marcatore azzurro",
+    "block.simplemaps.marker_yellow": "Marcatore giallo",
+    "block.simplemaps.marker_lime": "Marcatore lime",
+    "block.simplemaps.marker_pink": "Marcatore rosa",
+    "block.simplemaps.marker_gray": "Marcatore grigio",
+    "block.simplemaps.marker_light_gray": "Marcatore grigio chiaro",
+    "block.simplemaps.marker_cyan": "Marcatore ciano",
+    "block.simplemaps.marker_purple": "Marcatore viola",
+    "block.simplemaps.marker_blue": "Marcatore blu",
+    "block.simplemaps.marker_brown": "Marcatore marrone",
+    "block.simplemaps.marker_green": "Marcatore verde",
+    "block.simplemaps.marker_red": "Marcatore rosso",
+    "block.simplemaps.marker_black": "Marcatore nero",
+    "itemGroup.simplemaps": "Simple Maps",
+
+    "advancement.simplemaps:root": "Simple Maps",
+    "advancement.simplemaps:root.desc": "Mappe leggere in stile Vanilla",
+    "advancement.simplemaps:minimap": "Sblocca la minimappa",
+    "advancement.simplemaps:minimap.desc": "Una piccola e onnipresente vista del mondo intorno a te.",
+    "advancement.simplemaps:world_map": "Sblocca la mappa del mondo",
+    "advancement.simplemaps:world_map.desc": "Una grande mappa che puoi richiamare e con cui puoi girovagare.",
+
+    "simplemaps.gui.keygroup": "Simple Maps",
+    "simplemaps.keybind.open_world_map": "Apri la mappa del mondo",
+    "simplemaps.message.fail_open_map": "Non hai ancora sbloccato la mappa del mondo!"
+}
