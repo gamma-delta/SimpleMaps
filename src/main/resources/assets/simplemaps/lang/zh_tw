@@ -1,0 +1,32 @@
+{
+    "item.simplemaps.minimap": "區域地圖",
+    "item.simplemaps.world_map": "世界地圖",
+    "block.simplemaps.marker_white": "白色標記",
+    "block.simplemaps.marker_orange": "橙色標記",
+    "block.simplemaps.marker_magenta": "洋紅色標記",
+    "block.simplemaps.marker_light_blue": "淺藍色標記",
+    "block.simplemaps.marker_yellow": "黃色標記",
+    "block.simplemaps.marker_lime": "淺綠色標記",
+    "block.simplemaps.marker_pink": "粉色標記",
+    "block.simplemaps.marker_gray": "灰色標記",
+    "block.simplemaps.marker_light_gray": "淺灰色標記",
+    "block.simplemaps.marker_cyan": "青色標記",
+    "block.simplemaps.marker_purple": "紫色標記",
+    "block.simplemaps.marker_blue": "藍色標記",
+    "block.simplemaps.marker_brown": "棕色標記",
+    "block.simplemaps.marker_green": "綠色標記",
+    "block.simplemaps.marker_red": "紅色標記",
+    "block.simplemaps.marker_black": "黑色標記",
+    "itemGroup.simplemaps": "Simple Map",
+
+    "advancement.simplemaps:root": "簡單地圖",
+    "advancement.simplemaps:root.desc": "簡單明亮的原版地圖.",
+    "advancement.simplemaps:minimap": "解鎖區域地圖",
+    "advancement.simplemaps:minimap.desc": "一個小的、你周圍區域的全視地圖.",
+    "advancement.simplemaps:world_map": "解鎖世界地圖",
+    "advancement.simplemaps:world_map.desc": "可以叫出並移動視角的地圖.",
+
+    "simplemaps.gui.keygroup": "Simple Maps",
+    "simplemaps.keybind.open_world_map": "打開世界地圖",
+    "simplemaps.message.fail_open_map": "你還沒解鎖世界地圖!"
+}
